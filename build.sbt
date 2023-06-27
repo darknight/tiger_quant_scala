@@ -37,6 +37,7 @@ lazy val storage = (project in file("tquant-storage"))
       "org.tpolecat" %% "doobie-scalatest" % doobieVersion % "test"
     )
   )
+  .dependsOn(core)
 
 lazy val gateway = (project in file("tquant-gateway"))
   .settings(

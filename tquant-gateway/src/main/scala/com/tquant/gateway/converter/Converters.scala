@@ -23,7 +23,7 @@ object Converters {
       Bar(
         symbol = symbol,
         period = barType.entryName,
-        duration = duration,
+        duration = duration.length,
         open = point.getOpen,
         close = point.getClose,
         high = point.getHigh,

@@ -1,6 +1,6 @@
 package com.tquant.gateway.tiger
 
-import cats.data.EitherT
+import cats.data.{EitherT, NonEmptyList}
 import cats.effect.kernel.Sync
 import com.tigerbrokers.stock.openapi.client.https.client.TigerHttpClient
 import com.tigerbrokers.stock.openapi.client.https.domain.financial.item.{CorporateDividendItem, CorporateSplitItem, FinancialDailyItem, FinancialReportItem}
@@ -68,29 +68,30 @@ class TigerQuoteApi[F[_]](private val client: TigerHttpClient)(implicit f: Sync[
 
   def getSymbolNames(market: Market): EitherT[F, TigerQuantException, List[SymbolName]] = ???
 
-  def getBars(symbols: List[String], barType: BarType, rightOption: RightOption,
+  def getBars(symbols: NonEmptyList[String], barType: BarType, rightOption: RightOption,
               limit: Int): EitherT[F, TigerQuantException, SymbolBarMap] = ???
 
-  def getBars(symbols: List[String], barType: BarType, start: LocalDate,
+  def getBars(symbols: NonEmptyList[String], barType: BarType, start: LocalDate,
               end: LocalDate, rightOption: RightOption): EitherT[F, TigerQuantException, SymbolBarMap] = ???
 
-  def getFutureBars(symbols: List[String], barType: BarType, limit: Int): EitherT[F, TigerQuantException, SymbolBarMap] = ???
+  def getFutureBars(symbols: NonEmptyList[String], barType: BarType,
+                    limit: Int): EitherT[F, TigerQuantException, SymbolBarMap] = ???
 
-  def getRealTimeQuotes(symbols: List[String]): EitherT[F, TigerQuantException, SymbolRealtimeQuoteMap] = ???
+  def getRealTimeQuotes(symbols: NonEmptyList[String]): EitherT[F, TigerQuantException, SymbolRealtimeQuoteMap] = ???
 
-  def getTradeTicks(symbols: List[String]): EitherT[F, TigerQuantException, SymbolTickMap] = ???
+  def getTradeTicks(symbols: NonEmptyList[String]): EitherT[F, TigerQuantException, SymbolTickMap] = ???
 
-  def getTimeShareQuotes(symbols: List[String], beginTime: Long): EitherT[F, TigerQuantException, SymbolTimelineQuoteMap] = ???
+  def getTimeShareQuotes(symbols: NonEmptyList[String], beginTime: Long): EitherT[F, TigerQuantException, SymbolTimelineQuoteMap] = ???
 
-  def getFinancialDaily(symbols: List[String], fields: List[String],
+  def getFinancialDaily(symbols: NonEmptyList[String], fields: List[String],
                         beginDate: LocalDate, endDate: LocalDate): EitherT[F, TigerQuantException, SymbolFinDailyMap] = ???
 
-  def getFinancialReport(symbols: List[String], fields: List[String],
+  def getFinancialReport(symbols: NonEmptyList[String], fields: List[String],
                          periodType: FinancialPeriodType): EitherT[F, TigerQuantException, SymbolFinReportMap] = ???
 
-  def getCorporateSplit(symbols: List[String], beginDate: LocalDate,
+  def getCorporateSplit(symbols: NonEmptyList[String], beginDate: LocalDate,
                         endDate: LocalDate): EitherT[F, TigerQuantException, SymbolCorpSplitMap] = ???
 
-  def getCorporateDividend(symbols: List[String], beginDate: LocalDate,
+  def getCorporateDividend(symbols: NonEmptyList[String], beginDate: LocalDate,
                            endDate: LocalDate): EitherT[F, TigerQuantException, SymbolCorpDividendMap] = ???
 }
