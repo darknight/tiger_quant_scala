@@ -8,6 +8,7 @@ import doobie.postgres.implicits._ // For LocalDateTime
 
 import java.time.LocalDateTime
 
+// TODO: unit tests
 class TickDAO(private val xaRes: Resource[IO, HikariTransactor[IO]]) {
 
   val ALL_COLUMN = "symbol,volume,amount,latest_price,latest_volume,latest_time,time,type,create_time"

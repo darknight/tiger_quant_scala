@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig
 import dao.{BarDAO, ContractDAO, TickDAO}
 import doobie.hikari.HikariTransactor
 
+// TODO: respect `"storage.enable"` settings from ConfigLoader
 object DAOInstance {
   val xaRes: Resource[IO, HikariTransactor[IO]] = for {
     hikariConfig <- Resource.pure {

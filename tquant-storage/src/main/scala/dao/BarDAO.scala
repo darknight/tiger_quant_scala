@@ -4,14 +4,11 @@ import cats.effect.{IO, Resource}
 import com.tquant.core.model.data.Bar
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
-import doobie.implicits.javasql._
-import doobie.postgres.implicits._
+import doobie.postgres.implicits._ // For LocalDateTime
 
-import java.sql.Timestamp
 import java.time.LocalDateTime
-import scala.concurrent.duration.Duration
 
-
+// TODO: unit tests
 class BarDAO(private val xaRes: Resource[IO, HikariTransactor[IO]]) {
 
   val QUERY_COLUMN = "symbol,period,open,high,low,close,volume,duration,amount,time"
