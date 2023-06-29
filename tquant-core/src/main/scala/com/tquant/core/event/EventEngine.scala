@@ -17,13 +17,24 @@ class EventEngine(capacity: Int) {
 
   private val handlerMapIO = AtomicCell[IO].empty[Map[EventType, List[EventHandler]]]
 
-  def start(): IO[Unit] = ???
+  // TODO: respect `engineActiveIO`
+  def start(): IO[Unit] = {
+    def poll(): IO[Unit] =
+      for {
+        queue <- queueIO
+        event <- queue.take
+        _ <- process(event)
+      } yield ()
 
-  def timer: IO[Unit] = {
-    def enqueue: IO[Unit] =
+    poll() >> start()
+  }
+
+  // TODO: return from recursion
+  def timer(): IO[Unit] = {
+    def enqueue(): IO[Unit] =
       Temporal[IO].sleep(10.seconds) >> queueIO.flatMap(_.offer(Event(EventType.EVENT_TIMER, None)))
 
-    enqueue >> timer
+    enqueue() >> timer()
   }
 
   /**

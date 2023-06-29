@@ -1,11 +1,12 @@
 package com.tquant.core.model.data
 
+import com.tquant.core.event.EventData
 import com.tquant.core.model.enums.SecType
 
 case class Position(contract: Contract, account: String, symbol: String, secType: String,
                     right: String, identifier: String, exchange: String, direction: String,
                     position: Int, averageCost: Double, marketPrice: Double, marketValue: Double,
-                    realizedPnl: Double, unrealizedPnl: Double) {
+                    realizedPnl: Double, unrealizedPnl: Double) extends EventData {
 
   def isStock: Boolean = secType.equalsIgnoreCase(SecType.STK.entryName)
 
