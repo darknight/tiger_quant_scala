@@ -17,20 +17,11 @@ import java.time.LocalDate
 import scala.jdk.CollectionConverters._
 
 object TigerQuoteApi {
-  type SymbolBarMap = Map[String, List[Bar]]
-  type SymbolRealtimeQuoteMap = Map[String, List[RealtimeQuote]]
-  type SymbolTickMap = Map[String, List[Tick]]
-  type SymbolTimelineQuoteMap = Map[String, List[TimelineQuote]]
-  type SymbolFinDailyMap = Map[String, List[FinancialDailyItem]]
-  type SymbolFinReportMap = Map[String, List[FinancialReportItem]]
-  type SymbolCorpSplitMap = Map[String, List[CorporateSplitItem]]
-  type SymbolCorpDividendMap = Map[String, List[CorporateDividendItem]]
 }
 
 class TigerQuoteApi[F[_]](private val client: TigerHttpClient)(implicit f: Sync[F]) {
-  import TigerQuoteApi._
 
-  def grabQuotePermission(): EitherT[F, RuntimeException, String] = {
+  def grabQuotePermission(): EitherT[F, TigerQuantException, String] = {
     val request = new TigerHttpRequest(MethodName.GRAB_QUOTE_PERMISSION)
     val bizContent = AccountParamBuilder.instance().buildJson()
     request.setBizContent(bizContent)
@@ -41,7 +32,7 @@ class TigerQuoteApi[F[_]](private val client: TigerHttpClient)(implicit f: Sync[
         Right(resp.getData)
       }
       else {
-        Left(new RuntimeException("grab quote permission error:" + resp.getMessage))
+        Left(new TigerQuantException("grab quote permission error:" + resp.getMessage))
       }
     }
 

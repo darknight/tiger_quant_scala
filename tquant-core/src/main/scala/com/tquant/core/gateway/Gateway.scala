@@ -1,7 +1,8 @@
-package com.tquant.core.core
+package com.tquant.core.gateway
 
-import cats.data.NonEmptyList
+import cats.data.{EitherT, NonEmptyList}
 import cats.effect.IO
+import com.tquant.core.TigerQuantException
 import com.tquant.core.event.{Event, EventData, EventEngine, EventType}
 import com.tquant.core.model.data.{Asset, Bar, Contract, Order, Position, Tick, Trade}
 import com.tquant.core.model.enums.BarType
@@ -15,13 +16,14 @@ abstract class Gateway(eventEngine: EventEngine, name: String) {
 
   def cancelSubscribe(request: SubscribeRequest): IO[Unit]
 
-  def sendOrder(request: OrderRequest): IO[Long]
+  def sendOrder(request: OrderRequest): EitherT[IO, TigerQuantException, Long]
 
-  def cancelOrder(request: ModifyRequest): IO[Unit]
+  def cancelOrder(request: ModifyRequest): EitherT[IO, TigerQuantException, Unit]
 
-  def modifyOrder(request: ModifyRequest): IO[Long]
+  def modifyOrder(request: ModifyRequest): EitherT[IO, TigerQuantException, Long]
 
-  def getBars(symbols: NonEmptyList[String], barType: BarType, limit: Int): IO[Map[String, List[Bar]]]
+  def getBars(symbols: NonEmptyList[String], barType: BarType,
+              limit: Int): EitherT[IO, TigerQuantException, Map[String, List[Bar]]]
 
   def onEvent(eventType: EventType, eventData: EventData): IO[Unit] = {
     eventEngine.put(Event(eventType, Some(eventData)))
