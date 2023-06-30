@@ -8,8 +8,11 @@ case class Order(id: Long, gatewayName: String, name: String, account: String,
                  averageFilledPrice: Double, filledVolume: Long,
                  status: String, remark: String, time: Long) extends EventData {
   // TODO
+  def isActive: Boolean = Order.activeStatus.contains(status.toLowerCase)
 }
 
 object Order {
+
+  private val activeStatus = Set("initial", "pendingsubmit", "submitted", "pendingcancel")
 
 }

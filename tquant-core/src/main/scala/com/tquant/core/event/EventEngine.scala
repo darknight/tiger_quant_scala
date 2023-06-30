@@ -2,12 +2,15 @@ package com.tquant.core.event
 
 import cats.effect.{IO, Spawn, Temporal}
 import cats.effect.std.{AtomicCell, Queue}
+import com.tquant.core.engine.Engine
 
 import scala.concurrent.duration._
 //import cats.implicits._
 //import cats.effect._
 
-class EventEngine(capacity: Int) {
+class EventEngine(capacity: Int) extends Engine {
+
+  val engineName = "EventEngine"
 
   private val queueIO = Queue.bounded[IO, Event](capacity)
 
@@ -28,6 +31,8 @@ class EventEngine(capacity: Int) {
 
     poll() >> start()
   }
+
+  def stop(): IO[Unit] = IO.unit
 
   // TODO: return from recursion
   def timer(): IO[Unit] = {
