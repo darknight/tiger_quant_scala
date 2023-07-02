@@ -48,6 +48,8 @@ class TigerGateway(clientConf: ClientConfig, xaRes: Resource[IO, HikariTransacto
     }
   }
 
+  override def disconnect(): IO[Unit] = ???
+
   override def subscribe(request: SubscribeRequest): IO[Unit] = ???
 
   override def cancelSubscribe(request: SubscribeRequest): IO[Unit] = ???

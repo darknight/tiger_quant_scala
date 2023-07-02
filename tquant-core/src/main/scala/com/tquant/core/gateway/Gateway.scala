@@ -12,6 +12,8 @@ abstract class Gateway(eventEngine: EventEngine, name: String) {
 
   def connect(): IO[Unit]
 
+  def disconnect(): IO[Unit]
+
   def subscribe(request: SubscribeRequest): IO[Unit]
 
   def cancelSubscribe(request: SubscribeRequest): IO[Unit]
