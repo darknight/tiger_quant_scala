@@ -8,6 +8,7 @@ val tigerSDKVersion = "2.0.4"
 val catsEffectVersion = "3.5.0"
 val mysqlConnectorVersion = "8.0.33"
 val doobieVersion = "1.0.0-RC4"
+val pureConfigVersion = "0.17.4"
 
 // project definition
 
@@ -21,7 +22,8 @@ lazy val core = (project in file("tquant-core"))
     name := "tquant-core",
     libraryDependencies ++= Seq(
       "com.beachape" %% "enumeratum" % enumeratumVersion,
-      "org.typelevel" %% "cats-effect" % catsEffectVersion
+      "org.typelevel" %% "cats-effect" % catsEffectVersion,
+      "com.github.pureconfig" %% "pureconfig" % pureConfigVersion
     )
   )
 
@@ -48,3 +50,15 @@ lazy val gateway = (project in file("tquant-gateway"))
     )
   )
   .dependsOn(core, storage)
+
+lazy val algorithm = (project in file("tquant-algorithm"))
+  .settings(
+    name := "tquant-algorithm"
+  )
+  .dependsOn(core)
+
+lazy val bootstrap = (project in file("tquant-bootstrap"))
+  .settings(
+    name := "tquant-bootstrap"
+  )
+  .dependsOn(core, storage, gateway, algorithm)
