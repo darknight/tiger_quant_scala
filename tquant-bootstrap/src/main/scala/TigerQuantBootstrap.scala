@@ -12,12 +12,14 @@ object TigerQuantBootstrap extends IOApp.Simple {
   val logger = LoggerFactory[IO].getLogger
 
   def init(conf: ServerConf): IO[Unit] = {
-    val eventEngine = EventEngine(conf.eventEngine.capacity)
-    val algoEngine = new AlgoEngine(eventEngine)
-    val orderEngine = new OrderEngine(eventEngine)
-    val gateway = TigerGateway(conf, eventEngine)
-    val mainEngine = new MainEngine(gateway, orderEngine, algoEngine, eventEngine)
-    mainEngine.start()
+    for {
+      eventEngine <- EventEngine(conf.eventEngine.capacity)
+      algoEngine = new AlgoEngine(eventEngine)
+      orderEngine = new OrderEngine(eventEngine)
+      gateway = TigerGateway(conf, eventEngine)
+      mainEngine = new MainEngine(gateway, orderEngine, algoEngine, eventEngine)
+      _ <- mainEngine.start()
+    } yield ()
   }
 
   val run: IO[Unit] = {
@@ -26,8 +28,7 @@ object TigerQuantBootstrap extends IOApp.Simple {
       _ <- result match {
         case Left(err) => logger.error(s"config load failed => $err")
         case Right(conf) =>
-          logger.info(s"config => $conf")
-          init(conf)
+          logger.info(s"config => $conf") *> init(conf) *> logger.info("exit....")
       }
     } yield ()
   }

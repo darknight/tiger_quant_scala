@@ -3,6 +3,7 @@ package com.tquant.core.config
 import cats.effect.IO
 import pureconfig.ConfigReader.Result
 import pureconfig._
+import pureconfig.generic.ProductHint
 import pureconfig.generic.auto._
 
 case class Jdbc(url: String, user: String, password: String)

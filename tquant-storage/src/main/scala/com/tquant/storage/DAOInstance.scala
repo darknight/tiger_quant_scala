@@ -13,7 +13,7 @@ object DAOInstance {
       hikariConfig <- Resource.pure {
         val config = new HikariConfig()
         config.setDriverClassName("org.postgresql.Driver")
-        config.setJdbcUrl(conf.jdbc.user)
+        config.setJdbcUrl(conf.jdbc.url)
         config.setUsername(conf.jdbc.user)
         config.setPassword(conf.jdbc.password)
         config

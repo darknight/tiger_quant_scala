@@ -10,6 +10,7 @@ import com.tquant.core.TigerQuantException
 import com.tquant.core.config.ServerConf
 import com.tquant.core.event.EventEngine
 import com.tquant.core.gateway.Gateway
+import com.tquant.core.log.logging
 import com.tquant.core.model.data.{Asset, Bar, Contract, Order}
 import com.tquant.core.model.enums.BarType
 import com.tquant.core.model.request.{ModifyRequest, OrderRequest, SubscribeRequest}
@@ -18,12 +19,15 @@ import com.tquant.gateway.tiger.{SymbolBarMap, TigerOptionApi, TigerQuoteApi, Ti
 import com.tquant.storage.DAOInstance
 import com.tquant.storage.dao.ContractDAO
 import doobie.hikari.HikariTransactor
+import org.typelevel.log4cats.LoggerFactory
 
 // TODO: init `WebSocketClient` & `TigerSubscribeApi`
 class TigerGateway(conf: ServerConf, eventEngine: EventEngine,
                    private val xaRes: Resource[IO, HikariTransactor[IO]]) extends Gateway(eventEngine) {
 
   val name: String = getClass.getSimpleName
+  val logger = LoggerFactory[IO].getLogger
+
   private val clientConf = Converters.toClientConfig(conf)
   private val httpClient = TigerHttpClient.getInstance().clientConfig(clientConf)
   private val contractDAO = new ContractDAO(xaRes)
@@ -37,19 +41,21 @@ class TigerGateway(conf: ServerConf, eventEngine: EventEngine,
   private val openOrderMapIO = Ref[IO].of(Map.empty[Long, Order])
   private val assetMapIO = Ref[IO].of(Map.empty[String, Asset])
 
-  override def connect(): IO[Unit] = {
+  override def connect(): IO[Boolean] = {
+    // FIXME
+//    for {
+//      _ <- queryContract()
+//    } yield ()
+
     for {
-      _ <- queryContract()
-    } yield ()
-
-    val res = for {
-      resp <- quoteApi.grabQuotePermission()
-    } yield resp
-
-    res.value.map {
-      case Left(e) => // TODO: log error
-      case Right(value) => // TODO: log response
-    }
+      resp <- quoteApi.grabQuotePermission().value
+      res <- resp match {
+        case Left(e) =>
+          logger.error(s"grab quote perm failed => $e") *> IO.pure(false)
+        case Right(value) =>
+          logger.info(s"grab quote resp => $value") *> IO.pure(true)
+      }
+    } yield res
   }
 
   override def disconnect(): IO[Unit] = ???

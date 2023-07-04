@@ -1,18 +1,19 @@
 package com.tquant.core.event
 
-import cats.effect.{IO, Spawn, Temporal}
+import cats.effect.{Concurrent, IO, Ref, Spawn, Temporal}
 import cats.effect.std.{AtomicCell, Queue}
 import com.tquant.core.engine.Engine
+import com.tquant.core.log.logging
+import org.typelevel.log4cats.LoggerFactory
 
 import scala.concurrent.duration._
-//import cats.implicits._
-//import cats.effect._
+import cats.implicits._
+//import cats.effect.syntax.all._
 
-class EventEngine(capacity: Int) extends Engine {
+class EventEngine(capacity: Int, queue: Queue[IO, Event]) extends Engine {
 
   val engineName = "EventEngine"
-
-  private val queueIO = Queue.bounded[IO, Event](capacity)
+  val logger = LoggerFactory[IO].getLogger
 
   private val engineActiveIO = AtomicCell[IO].of(false)
 
@@ -22,24 +23,40 @@ class EventEngine(capacity: Int) extends Engine {
 
   // TODO: respect `engineActiveIO`
   def start(): IO[Unit] = {
-    def poll(): IO[Unit] =
-      for {
-        queue <- queueIO
-        event <- queue.take
-        _ <- process(event)
-      } yield ()
-
-    poll() >> start()
+    for {
+      _ <- IO.defer(timer(5.seconds).start).void
+      _ <- polling()
+    } yield ()
   }
 
   def stop(): IO[Unit] = IO.unit
 
-  // TODO: return from recursion
-  def timer(): IO[Unit] = {
-    def enqueue(): IO[Unit] =
-      Temporal[IO].sleep(10.seconds) >> queueIO.flatMap(_.offer(Event(EventType.EVENT_TIMER, None)))
+  def polling(): IO[Unit] = {
+    dequeue() >> polling()
+  }
 
-    enqueue() >> timer()
+  def dequeue(): IO[Unit] = {
+    for {
+      _ <- Temporal[IO].sleep(7.seconds)
+      _ <- logger.info("polling...")
+      event <- queue.take
+      _ <- logger.info(s"fetch event => $event")
+      _ <- process(event)
+      _ <- logger.info(s"process event, done...")
+    } yield ()
+  }
+
+  // TODO: return from recursion
+  def timer(duration: Duration): IO[Unit] = {
+    Temporal[IO].sleep(duration) >> enqueue() >> timer(duration)
+  }
+
+  def enqueue(): IO[Unit] = {
+    for {
+      _ <- queue.offer(Event(EventType.EVENT_TIMER, None))
+      size <- queue.size
+      _ <- logger.info(s"send timer event, queue size => ($size, $capacity)")
+    } yield ()
   }
 
   /**
@@ -56,12 +73,12 @@ class EventEngine(capacity: Int) extends Engine {
 
   /**
    * Add event to event queue
+   *
    * @param event
    * @return
    */
   def put(event: Event): IO[Unit] = {
     for {
-      queue <- queueIO
       _ <- queue.offer(event)
     } yield ()
   }
@@ -92,8 +109,8 @@ class EventEngine(capacity: Int) extends Engine {
   }
 
   private def removeHandlerIfExit(map: Map[EventType, List[EventHandler]],
-                                 eventType: EventType,
-                                 handler: EventHandler): Map[EventType, List[EventHandler]] = {
+                                  eventType: EventType,
+                                  handler: EventHandler): Map[EventType, List[EventHandler]] = {
     val handlerList = map.getOrElse(eventType, List.empty)
     if (handlerList.contains(handler)) {
       map + (eventType -> handlerList.filterNot(_ == handler))
@@ -104,7 +121,10 @@ class EventEngine(capacity: Int) extends Engine {
 }
 
 object EventEngine {
-  def apply(capacity: Int): EventEngine = {
-    new EventEngine(capacity)
+  def apply(capacity: Int): IO[EventEngine] = {
+    for {
+      queue <- Queue.bounded[IO, Event](capacity)
+      engine = new EventEngine(capacity, queue)
+    } yield engine
   }
 }

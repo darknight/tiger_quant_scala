@@ -12,7 +12,7 @@ abstract class Gateway(eventEngine: EventEngine) {
 
   def name: String
 
-  def connect(): IO[Unit]
+  def connect(): IO[Boolean]
 
   def disconnect(): IO[Unit]
 
