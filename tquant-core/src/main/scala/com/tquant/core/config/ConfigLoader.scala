@@ -12,9 +12,11 @@ case class Subscribe(enable: Boolean)
 case class Contract(loadEnable: Boolean)
 case class TigerGateway(apiLogEnable: Boolean, apiLogPath: String,
                         tigerId: String, account: String, privateKey: String)
+case class EventEngine(capacity: Int)
 
 case class ServerConf(jdbc: Jdbc, log: Log, storage: Storage,
-                      subscribe: Subscribe, contract: Contract, tigerGateway: TigerGateway)
+                      subscribe: Subscribe, contract: Contract,
+                      tigerGateway: TigerGateway, eventEngine: EventEngine)
 
 object ConfigLoader {
 

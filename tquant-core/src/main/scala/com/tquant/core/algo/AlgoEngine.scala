@@ -115,7 +115,7 @@ class AlgoEngine(eventEngine: EventEngine) extends Engine {
   def cancelOrder(orderId: Long): IO[Unit] = ???
 
   def sendOrder(algoName: String, symbol: String, direction: Direction,
-                price: Double, volume: Int, orderType: OrderType): IO[Unit] = ???
+                price: Double, volume: Int, orderType: OrderType): IO[Long] = ???
 
   def getTick(symbol: String): IO[Tick] = ???
 

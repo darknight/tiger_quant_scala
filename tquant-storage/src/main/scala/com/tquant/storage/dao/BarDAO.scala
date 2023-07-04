@@ -1,4 +1,4 @@
-package dao
+package com.tquant.storage.dao
 
 import cats.effect.{IO, Resource}
 import com.tquant.core.model.data.Bar

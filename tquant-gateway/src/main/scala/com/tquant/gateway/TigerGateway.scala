@@ -7,20 +7,24 @@ import cats.implicits._
 import com.tigerbrokers.stock.openapi.client.config.ClientConfig
 import com.tigerbrokers.stock.openapi.client.https.client.TigerHttpClient
 import com.tquant.core.TigerQuantException
+import com.tquant.core.config.ServerConf
 import com.tquant.core.event.EventEngine
 import com.tquant.core.gateway.Gateway
 import com.tquant.core.model.data.{Asset, Bar, Contract, Order}
 import com.tquant.core.model.enums.BarType
 import com.tquant.core.model.request.{ModifyRequest, OrderRequest, SubscribeRequest}
+import com.tquant.gateway.converter.Converters
 import com.tquant.gateway.tiger.{SymbolBarMap, TigerOptionApi, TigerQuoteApi, TigerTradeApi}
-import dao.ContractDAO
+import com.tquant.storage.DAOInstance
+import com.tquant.storage.dao.ContractDAO
 import doobie.hikari.HikariTransactor
 
-// TODO: init `clientConf` from `TigerConfigLoader`
 // TODO: init `WebSocketClient` & `TigerSubscribeApi`
-class TigerGateway(clientConf: ClientConfig, xaRes: Resource[IO, HikariTransactor[IO]],
-                   eventEngine: EventEngine, name: String) extends Gateway(eventEngine, name) {
+class TigerGateway(conf: ServerConf, eventEngine: EventEngine,
+                   private val xaRes: Resource[IO, HikariTransactor[IO]]) extends Gateway(eventEngine) {
 
+  val name: String = getClass.getSimpleName
+  private val clientConf = Converters.toClientConfig(conf)
   private val httpClient = TigerHttpClient.getInstance().clientConfig(clientConf)
   private val contractDAO = new ContractDAO(xaRes)
 
@@ -96,8 +100,8 @@ class TigerGateway(clientConf: ClientConfig, xaRes: Resource[IO, HikariTransacto
 }
 
 object TigerGateway {
-  def apply(): TigerGateway = {
-    val name = "TigerGateway"
-    ???
+  def apply(conf: ServerConf, eventEngine: EventEngine): TigerGateway = {
+    val xaRes = DAOInstance.createXaRes(conf)
+    new TigerGateway(conf, eventEngine, xaRes)
   }
 }

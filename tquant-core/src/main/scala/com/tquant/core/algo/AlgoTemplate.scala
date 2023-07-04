@@ -111,14 +111,21 @@ abstract class AlgoTemplate(algoEngine: AlgoEngine) {
   def cancelSubscribe(symbol: String): IO[Unit] = ???
 
   def sendOrder(symbol: String, direction: Direction, price: Double, volume: Int,
-                stop: Boolean): IO[Unit] = IO.unit
+                stop: Boolean): IO[Long] = {
+    val orderType = if (stop) OrderType.LMT else OrderType.MKT
+    if (direction == Direction.BUY) {
+      buy(symbol, price, volume, orderType)
+    } else {
+      sell(symbol, price, volume, orderType)
+    }
+  }
 
-  def buy(symbol: String, price: Double, volume: Int, orderType: OrderType): IO[Unit] = {
+  def buy(symbol: String, price: Double, volume: Int, orderType: OrderType): IO[Long] = {
     // TODO: logging
     algoEngine.sendOrder(algoName, symbol, Direction.BUY, price, volume, orderType)
   }
 
-  def sell(symbol: String, price: Double, volume: Int, orderType: OrderType): IO[Unit] = {
+  def sell(symbol: String, price: Double, volume: Int, orderType: OrderType): IO[Long] = {
     // TODO: logging
     algoEngine.sendOrder(algoName, symbol, Direction.SELL, price, volume, orderType)
   }

@@ -9,6 +9,7 @@ val catsEffectVersion = "3.5.0"
 val mysqlConnectorVersion = "8.0.33"
 val doobieVersion = "1.0.0-RC4"
 val pureConfigVersion = "0.17.4"
+val log4catsVersion = "2.6.0"
 
 // project definition
 
@@ -23,7 +24,9 @@ lazy val core = (project in file("tquant-core"))
     libraryDependencies ++= Seq(
       "com.beachape" %% "enumeratum" % enumeratumVersion,
       "org.typelevel" %% "cats-effect" % catsEffectVersion,
-      "com.github.pureconfig" %% "pureconfig" % pureConfigVersion
+      "com.github.pureconfig" %% "pureconfig" % pureConfigVersion,
+      "org.typelevel" %% "log4cats-core"    % log4catsVersion,
+      "org.typelevel" %% "log4cats-slf4j"   % log4catsVersion
     )
   )
 

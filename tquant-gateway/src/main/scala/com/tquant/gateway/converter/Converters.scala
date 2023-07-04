@@ -1,16 +1,26 @@
 package com.tquant.gateway.converter
 
+import com.tigerbrokers.stock.openapi.client.config.ClientConfig
 import com.tigerbrokers.stock.openapi.client.https.domain.contract.item.ContractItem
 import com.tigerbrokers.stock.openapi.client.https.domain.future.item.{FutureContractItem, FutureKlineItem}
 import com.tigerbrokers.stock.openapi.client.https.domain.quote.item.{KlinePoint, MarketItem, RealTimeQuoteItem, SymbolNameItem, TimelineItem, TimelinePoint => SDKTimelinePoint, TradeCalendar => SDKTradeCalendar}
 import com.tigerbrokers.stock.openapi.client.struct.enums.{FutureKType, KType}
 import com.tigerbrokers.stock.openapi.client.util.SymbolUtil
+import com.tquant.core.config.ServerConf
 import com.tquant.core.model.data.{Bar, Contract, MarketStatus, RealtimeQuote, SymbolName, TimelinePoint, TimelineQuote, TradeCalendar}
 import com.tquant.core.model.enums.{BarType, SecType}
 
 import java.time.{Instant, ZoneId}
 
 object Converters {
+
+  def toClientConfig(conf: ServerConf): ClientConfig = {
+    val clientConfig = ClientConfig.DEFAULT_CONFIG
+    clientConfig.tigerId = conf.tigerGateway.tigerId
+    clientConfig.privateKey = conf.tigerGateway.privateKey
+    clientConfig.defaultAccount = conf.tigerGateway.account
+    clientConfig
+  }
 
   def getZoneId(symbol: String): String = {
     if(SymbolUtil.isUsStockSymbol(symbol)) "America/New_York" else "Asia/Shanghai"

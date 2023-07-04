@@ -8,7 +8,9 @@ import com.tquant.core.model.data.{Asset, Bar, Contract, Order, Position, Tick, 
 import com.tquant.core.model.enums.BarType
 import com.tquant.core.model.request.{ModifyRequest, OrderRequest, SubscribeRequest}
 
-abstract class Gateway(eventEngine: EventEngine, name: String) {
+abstract class Gateway(eventEngine: EventEngine) {
+
+  def name: String
 
   def connect(): IO[Unit]
 

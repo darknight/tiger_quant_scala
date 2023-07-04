@@ -13,7 +13,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 class MainEngine(gateway: Gateway, orderEngine: OrderEngine, algoEngine: AlgoEngine,
-                 eventEngine: EventEngine, logEngine: LogEngine) extends Engine {
+                 eventEngine: EventEngine) extends Engine {
 
   val engineName = "MainEngine"
 
@@ -25,7 +25,6 @@ class MainEngine(gateway: Gateway, orderEngine: OrderEngine, algoEngine: AlgoEng
       _ <- eventEngine.start()
       _ <- orderEngine.start()
       _ <- algoEngine.start()
-      _ <- logEngine.start()
     } yield ()
     // TODO: logging
   }
@@ -36,7 +35,6 @@ class MainEngine(gateway: Gateway, orderEngine: OrderEngine, algoEngine: AlgoEng
       _ <- eventEngine.stop()
       _ <- orderEngine.stop()
       _ <- algoEngine.stop()
-      _ <- logEngine.stop()
     } yield ()
     // TODO: logging
   }
