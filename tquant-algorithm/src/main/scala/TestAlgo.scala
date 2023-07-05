@@ -4,9 +4,11 @@ import com.tquant.core.log.logging
 import com.tquant.core.model.data.{Bar, Order, Tick, Trade}
 import org.typelevel.log4cats.LoggerFactory
 
-class TestAlgo(algoEngine: AlgoEngine) extends AlgoTemplate(algoEngine) {
-
-  private val logger = LoggerFactory[IO].getLogger
+class TestAlgo(algoEngine: AlgoEngine,
+               activeRef: Ref[IO, Boolean],
+               activeOrderMapRef: Ref[IO, Map[Long, Order]],
+               tickMapRef: Ref[IO, Map[String, Tick]])
+  extends AlgoTemplate(algoEngine, activeRef, activeOrderMapRef, tickMapRef) {
 
   override def onBar(bar: Bar): IO[Unit] = IO.unit
 
@@ -30,7 +32,11 @@ class TestAlgo(algoEngine: AlgoEngine) extends AlgoTemplate(algoEngine) {
 object TestAlgo {
   def createAndAttach(algoEngine: AlgoEngine): IO[Unit] = {
     for {
-      _ <- algoEngine.addAlgoImpl(new TestAlgo(algoEngine))
+      activeRef <- Ref.of[IO, Boolean](false)
+      activeOrderMapRef <- Ref.of[IO, Map[Long, Order]](Map.empty)
+      tickMapRef <- Ref.of[IO, Map[String, Tick]](Map.empty)
+      algo = new TestAlgo(algoEngine, activeRef, activeOrderMapRef, tickMapRef)
+      _ <- algoEngine.addAlgoImpl(algo)
     } yield ()
   }
 }

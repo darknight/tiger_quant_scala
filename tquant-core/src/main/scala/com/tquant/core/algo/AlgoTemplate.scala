@@ -4,17 +4,18 @@ import cats._
 import cats.data.NonEmptyList
 import cats.implicits._
 import cats.effect.{IO, Ref}
-import cats.effect.std.AtomicCell
+import com.tquant.core.log.logging
 import com.tquant.core.model.data.{Asset, Bar, Contract, Order, Position, Tick, Trade}
 import com.tquant.core.model.enums.{BarType, Direction, OrderType}
+import org.typelevel.log4cats.LoggerFactory
 
-abstract class AlgoTemplate(algoEngine: AlgoEngine) {
+abstract class AlgoTemplate(algoEngine: AlgoEngine,
+                            activeRef: Ref[IO, Boolean],
+                            activeOrderMapRef: Ref[IO, Map[Long, Order]],
+                            tickMapRef: Ref[IO, Map[String, Tick]]) {
 
   val algoName = this.getClass.getSimpleName
-
-  private val activeIO = AtomicCell[IO].of(false)
-  private val activeOrderMapIO = Ref.of[IO, Map[Long, Order]](Map.empty)
-  private val tickMapIO = Ref.of[IO, Map[String, Tick]](Map.empty)
+  val logger = LoggerFactory[IO].getLogger
 
   def onBar(bar: Bar): IO[Unit]
   def onStart(): IO[Unit]
@@ -26,26 +27,22 @@ abstract class AlgoTemplate(algoEngine: AlgoEngine) {
 
   def start(): IO[Unit] = {
     for {
-      cell <- activeIO
-      _ <- cell.set(true)
+      _ <- activeRef.set(true)
       _ <- onStart()
     } yield ()
   }
 
   def stop(): IO[Unit] = {
     for {
-      cell <- activeIO
-      _ <- cell.set(false)
+      _ <- activeRef.set(false)
       _ <- cancelAll()
       _ <- onStop()
-      // TODO: logging
     } yield ()
   }
 
   def cancelAll(): IO[Unit] = {
     for {
-      ref <- activeOrderMapIO
-      map <- ref.get
+      map <- activeOrderMapRef.get
       _ <- map.keys.toList.map(algoEngine.cancelOrder).sequence_
     } yield ()
   }
@@ -53,8 +50,7 @@ abstract class AlgoTemplate(algoEngine: AlgoEngine) {
   def updateTick(tick: Tick): IO[Unit] = {
     def handleTick(): IO[Unit] = {
       for {
-        ref <- tickMapIO
-        map <- ref.updateAndGet(map => {
+        map <- tickMapRef.updateAndGet(map => {
           val newTick = map.get(tick.symbol) match {
             case Some(history) => history.update(tick)
             case None => tick
@@ -67,8 +63,7 @@ abstract class AlgoTemplate(algoEngine: AlgoEngine) {
     }
 
     for {
-      activeCell <- activeIO
-      active <- activeCell.get
+      active <- activeRef.get
       _ <- if (active) handleTick() else IO.unit
     } yield ()
   }
@@ -77,31 +72,27 @@ abstract class AlgoTemplate(algoEngine: AlgoEngine) {
     def addOrder(): IO[Unit] = {
       IO(order.isActive).ifM({
         for {
-          ref <- activeOrderMapIO
-          _ <- ref.update(m => m + (order.id -> order))
+          _ <- activeOrderMapRef.update(m => m + (order.id -> order))
         } yield ()
       }, IO.unit)
     }
 
     for {
-      activeCell <- activeIO
-      active <- activeCell.get
+      active <- activeRef.get
       _ <- if (active) addOrder() *> onOrder(order) else IO.unit
     } yield ()
   }
 
   def updateTrade(trade: Trade): IO[Unit] = {
     for {
-      activeCell <- activeIO
-      active <- activeCell.get
+      active <- activeRef.get
       _ <- if (active) onTrade(trade) else IO.unit
     } yield ()
   }
 
   def updateTimer(): IO[Unit] = {
     for {
-      activeCell <- activeIO
-      active <- activeCell.get
+      active <- activeRef.get
       _ <- if (active) onTimer() else IO.unit
     } yield ()
   }

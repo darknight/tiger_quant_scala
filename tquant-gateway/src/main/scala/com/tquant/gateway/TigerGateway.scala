@@ -1,10 +1,8 @@
 package com.tquant.gateway
 
 import cats.data.{EitherT, NonEmptyList}
-import cats.effect.std.AtomicCell
 import cats.effect.{IO, Ref, Resource}
 import cats.implicits._
-import com.tigerbrokers.stock.openapi.client.config.ClientConfig
 import com.tigerbrokers.stock.openapi.client.https.client.TigerHttpClient
 import com.tquant.core.TigerQuantException
 import com.tquant.core.config.ServerConf
@@ -22,8 +20,13 @@ import doobie.hikari.HikariTransactor
 import org.typelevel.log4cats.LoggerFactory
 
 // TODO: init `WebSocketClient` & `TigerSubscribeApi`
-class TigerGateway(conf: ServerConf, eventEngine: EventEngine,
-                   private val xaRes: Resource[IO, HikariTransactor[IO]]) extends Gateway(eventEngine) {
+class TigerGateway(conf: ServerConf,
+                   eventEngine: EventEngine,
+                   xaRes: Resource[IO, HikariTransactor[IO]],
+                   contractMapRef: Ref[IO, Map[String, Contract]],
+                   orderMapRef: Ref[IO, Map[Long, Order]],
+                   openOrderMapRef: Ref[IO, Map[Long, Order]],
+                   assetMapRef: Ref[IO, Map[String, Asset]]) extends Gateway(eventEngine) {
 
   val name: String = getClass.getSimpleName
   val logger = LoggerFactory[IO].getLogger
@@ -35,11 +38,6 @@ class TigerGateway(conf: ServerConf, eventEngine: EventEngine,
   val tradeApi = new TigerTradeApi[IO](httpClient)
   val quoteApi = new TigerQuoteApi[IO](httpClient)
   val optionApi = new TigerOptionApi[IO](httpClient)
-
-  private val contractMapIO = Ref[IO].of(Map.empty[String, Contract])
-  private val orderMapIO = Ref[IO].of(Map.empty[Long, Order])
-  private val openOrderMapIO = Ref[IO].of(Map.empty[Long, Order])
-  private val assetMapIO = Ref[IO].of(Map.empty[String, Asset])
 
   override def connect(): IO[Boolean] = {
     // FIXME
@@ -66,7 +64,6 @@ class TigerGateway(conf: ServerConf, eventEngine: EventEngine,
 
   override def sendOrder(request: OrderRequest): EitherT[IO, TigerQuantException, Long] = {
     val contractIO = for {
-      contractMapRef <- contractMapIO
       contractMap <- contractMapRef.get
     } yield contractMap.get(request.symbol)
 
@@ -96,8 +93,7 @@ class TigerGateway(conf: ServerConf, eventEngine: EventEngine,
     val contractsIO = contractDAO.queryContracts()
     val res = contractsIO.map(contracts => contracts.map(contract => {
       for {
-        contractMap <- contractMapIO
-        _ <- contractMap.update(m => m + (contract.identifier -> contract))
+        _ <- contractMapRef.update(m => m + (contract.identifier -> contract))
         _ <- onContract(contract)
       } yield ()
     }))
@@ -106,8 +102,22 @@ class TigerGateway(conf: ServerConf, eventEngine: EventEngine,
 }
 
 object TigerGateway {
-  def apply(conf: ServerConf, eventEngine: EventEngine): TigerGateway = {
-    val xaRes = DAOInstance.createXaRes(conf)
-    new TigerGateway(conf, eventEngine, xaRes)
+  def apply(conf: ServerConf, eventEngine: EventEngine): IO[TigerGateway] = {
+    for {
+      contractMapRef <- Ref.of[IO, Map[String, Contract]](Map.empty)
+      orderMapRef <- Ref.of[IO, Map[Long, Order]](Map.empty)
+      openOrderMapRef <- Ref.of[IO, Map[Long, Order]](Map.empty)
+      assetMapRef <- Ref.of[IO, Map[String, Asset]](Map.empty)
+      xaRes = DAOInstance.createXaRes(conf)
+      gateway = new TigerGateway(
+        conf,
+        eventEngine,
+        xaRes,
+        contractMapRef,
+        orderMapRef,
+        openOrderMapRef,
+        assetMapRef
+      )
+    } yield gateway
   }
 }

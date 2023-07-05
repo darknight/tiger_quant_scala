@@ -19,7 +19,7 @@ class EventEngine(capacity: Int, queue: Queue[IO, Event],
   // TODO: add & respect `engineActiveIO`
   def start(): IO[Unit] = {
     for {
-      _ <- IO.defer(timer(60.seconds).start).void
+      _ <- IO.defer(timer(30.seconds).start).void
       _ <- polling()
     } yield ()
   }
@@ -32,6 +32,7 @@ class EventEngine(capacity: Int, queue: Queue[IO, Event],
 
   def dequeue(): IO[Unit] = {
     for {
+      _ <- Temporal[IO].sleep(100.seconds) // FIXME
       _ <- logger.info("polling...")
       event <- queue.take
       _ <- logger.info(s"fetch event => $event")
@@ -80,7 +81,7 @@ class EventEngine(capacity: Int, queue: Queue[IO, Event],
     for {
       _ <- handlerMapRef.update(addHandlerIfAbsent(_, eventType, handler))
       map <- handlerMapRef.get
-      _ <- logger.info(s"added ($eventType, $handler) => map size = ${map.size}")
+      _ <- logger.debug(s"added ($eventType, $handler) => map size = ${map.size}")
     } yield ()
   }
 

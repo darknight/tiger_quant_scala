@@ -1,14 +1,16 @@
 import cats.effect.{IO, Ref}
 import com.tquant.core.algo.{AlgoEngine, AlgoTemplate}
 import com.tquant.core.config.DmaSettings
-import com.tquant.core.log.logging
 import com.tquant.core.model.data.{Bar, Order, Tick, Trade}
 import com.tquant.core.model.enums.Direction
-import org.typelevel.log4cats.LoggerFactory
 
-class DmaAlgo(algoEngine: AlgoEngine, dmaSetting: DmaSettings) extends AlgoTemplate(algoEngine) {
+class DmaAlgo(dmaSetting: DmaSettings,
+              algoEngine: AlgoEngine,
+              activeRef: Ref[IO, Boolean],
+              activeOrderMapRef: Ref[IO, Map[Long, Order]],
+              tickMapRef: Ref[IO, Map[String, Tick]])
+  extends AlgoTemplate(algoEngine, activeRef, activeOrderMapRef, tickMapRef) {
 
-  private val logger = LoggerFactory[IO].getLogger
   private val direction = Direction.withName(dmaSetting.direction.toUpperCase)
   private val price: Double = dmaSetting.price
   private val volume: Int = dmaSetting.volume
