@@ -3,10 +3,14 @@ import cats.data.OptionT
 import cats.effect.{IO, Ref}
 import cats.implicits._
 import com.tquant.core.event.{Event, EventEngine, EventHandler, EventType}
+import com.tquant.core.log.logging
 import com.tquant.core.model.data.{Asset, Contract, Order, Position, Tick, Trade}
+import org.typelevel.log4cats.LoggerFactory
 
 class OrderEngine(eventEngine: EventEngine) extends Engine {
+
   val engineName: String = "OrderEngine"
+  val logger = LoggerFactory[IO].getLogger
 
   private val assetOptIO = Ref.of[IO, Option[Asset]](None)
   private val tickMapIO = Ref.of[IO, Map[String, Tick]](Map.empty)
@@ -125,6 +129,7 @@ class OrderEngine(eventEngine: EventEngine) extends Engine {
   def start(): IO[Unit] = {
     for {
       _ <- registerHandlers()
+      _ <- logger.info(s"$engineName registered handlers to EventEngine")
     } yield ()
   }
 

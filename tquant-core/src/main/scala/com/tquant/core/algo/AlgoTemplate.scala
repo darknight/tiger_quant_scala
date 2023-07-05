@@ -10,7 +10,7 @@ import com.tquant.core.model.enums.{BarType, Direction, OrderType}
 
 abstract class AlgoTemplate(algoEngine: AlgoEngine) {
 
-  private val algoName = this.getClass.getSimpleName
+  val algoName = this.getClass.getSimpleName
 
   private val activeIO = AtomicCell[IO].of(false)
   private val activeOrderMapIO = Ref.of[IO, Map[Long, Order]](Map.empty)

@@ -10,21 +10,16 @@ import scala.concurrent.duration._
 import cats.implicits._
 //import cats.effect.syntax.all._
 
-class EventEngine(capacity: Int, queue: Queue[IO, Event]) extends Engine {
+class EventEngine(capacity: Int, queue: Queue[IO, Event],
+                  handlerMapRef: Ref[IO, Map[EventType, List[EventHandler]]]) extends Engine {
 
   val engineName = "EventEngine"
   val logger = LoggerFactory[IO].getLogger
 
-  private val engineActiveIO = AtomicCell[IO].of(false)
-
-  private val timerActiveIO = AtomicCell[IO].of(false)
-
-  private val handlerMapIO = AtomicCell[IO].empty[Map[EventType, List[EventHandler]]]
-
-  // TODO: respect `engineActiveIO`
+  // TODO: add & respect `engineActiveIO`
   def start(): IO[Unit] = {
     for {
-      _ <- IO.defer(timer(5.seconds).start).void
+      _ <- IO.defer(timer(60.seconds).start).void
       _ <- polling()
     } yield ()
   }
@@ -37,7 +32,6 @@ class EventEngine(capacity: Int, queue: Queue[IO, Event]) extends Engine {
 
   def dequeue(): IO[Unit] = {
     for {
-      _ <- Temporal[IO].sleep(7.seconds)
       _ <- logger.info("polling...")
       event <- queue.take
       _ <- logger.info(s"fetch event => $event")
@@ -64,8 +58,7 @@ class EventEngine(capacity: Int, queue: Queue[IO, Event]) extends Engine {
    */
   def process(event: Event): IO[Unit] = {
     for {
-      handlerMap <- handlerMapIO
-      map <- handlerMap.get
+      map <- handlerMapRef.get
       handlerList = map.getOrElse(event.eventType, List.empty)
       _ = handlerList.map(_.processEvent(event))
     } yield ()
@@ -85,15 +78,15 @@ class EventEngine(capacity: Int, queue: Queue[IO, Event]) extends Engine {
 
   def registerHandler(eventType: EventType, handler: EventHandler): IO[Unit] = {
     for {
-      handlerMap <- handlerMapIO
-      _ <- handlerMap.update(addHandlerIfAbsent(_, eventType, handler))
+      _ <- handlerMapRef.update(addHandlerIfAbsent(_, eventType, handler))
+      map <- handlerMapRef.get
+      _ <- logger.info(s"added ($eventType, $handler) => map size = ${map.size}")
     } yield ()
   }
 
   def unregisterHandler(eventType: EventType, handler: EventHandler): IO[Unit] = {
     for {
-      handlerMap <- handlerMapIO
-      _ <- handlerMap.update(removeHandlerIfExit(_, eventType, handler))
+      _ <- handlerMapRef.update(removeHandlerIfExit(_, eventType, handler))
     } yield ()
   }
 
@@ -124,7 +117,8 @@ object EventEngine {
   def apply(capacity: Int): IO[EventEngine] = {
     for {
       queue <- Queue.bounded[IO, Event](capacity)
-      engine = new EventEngine(capacity, queue)
+      handlerMapRef <- Ref.of[IO, Map[EventType, List[EventHandler]]](Map.empty)
+      engine = new EventEngine(capacity, queue, handlerMapRef)
     } yield engine
   }
 }

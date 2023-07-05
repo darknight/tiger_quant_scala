@@ -14,7 +14,9 @@ object TigerQuantBootstrap extends IOApp.Simple {
   def init(conf: ServerConf): IO[Unit] = {
     for {
       eventEngine <- EventEngine(conf.eventEngine.capacity)
-      algoEngine = new AlgoEngine(eventEngine)
+      algoEngine <- AlgoEngine(eventEngine)
+      // TODO: load algos and add to algo engine elegantly
+      _ <- TestAlgo.createAndAttach(algoEngine)
       orderEngine = new OrderEngine(eventEngine)
       gateway = TigerGateway(conf, eventEngine)
       mainEngine = new MainEngine(gateway, orderEngine, algoEngine, eventEngine)
