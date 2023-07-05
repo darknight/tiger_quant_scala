@@ -15,6 +15,7 @@ class TestAlgo(algoEngine: AlgoEngine,
   override def onStart(): IO[Unit] = {
     for {
       _ <- logger.info(s"${algoName}.onStart is called")
+      _ <- algoEngine.getMarketStatus("US")
     } yield ()
   }
 

@@ -4,7 +4,7 @@ import cats.data.{EitherT, NonEmptyList}
 import cats.effect.IO
 import com.tquant.core.TigerQuantException
 import com.tquant.core.event.{Event, EventData, EventEngine, EventType}
-import com.tquant.core.model.data.{Asset, Bar, Contract, Order, Position, Tick, Trade}
+import com.tquant.core.model.data.{Asset, Bar, Contract, MarketStatus, Order, Position, Tick, Trade}
 import com.tquant.core.model.enums.BarType
 import com.tquant.core.model.request.{ModifyRequest, OrderRequest, SubscribeRequest}
 
@@ -48,6 +48,5 @@ abstract class Gateway(eventEngine: EventEngine) {
 
   def onAsset(asset: Asset): IO[Unit] = onEvent(EventType.EVENT_ASSET, asset)
 
-  // FIXME: proper logging different info type?
-  def log(): IO[Unit] = onEvent(EventType.EVENT_LOG, new EventData {})
+  def getMarketStatus(market: String): IO[List[MarketStatus]]
 }

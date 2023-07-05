@@ -4,14 +4,24 @@ import cats.data.NonEmptyList
 import cats.syntax.parallel._
 import cats.effect.{IO, Ref}
 import cats.implicits._
-import com.tquant.core.engine.Engine
+import com.tquant.core.engine.{Engine, OrderEngine}
 import com.tquant.core.event.{Event, EventEngine, EventHandler, EventType}
+import com.tquant.core.gateway.Gateway
 import com.tquant.core.log.logging
-import com.tquant.core.model.data.{Asset, Bar, Contract, Order, Position, Tick, Trade}
+import com.tquant.core.model.data.{Asset, Bar, Contract, MarketStatus, Order, Position, Tick, Trade}
 import com.tquant.core.model.enums.{BarType, Direction, OrderType}
 import org.typelevel.log4cats.LoggerFactory
 
+/**
+ * `AlgoEngine` consumes events, call public APIs of `OrderEngine` & `Gateway`
+ * @param eventEngine
+ * @param symbolAlgoNameListMapRef
+ * @param nameAlgoMapRef
+ * @param orderAlgoNameMapRef
+ */
 class AlgoEngine(eventEngine: EventEngine,
+                 orderEngine: OrderEngine,
+                 gateway: Gateway,
                  symbolAlgoNameListMapRef: Ref[IO, Map[String, List[String]]],
                  nameAlgoMapRef: Ref[IO, Map[String, AlgoTemplate]],
                  orderAlgoNameMapRef: Ref[IO, Map[Long, String]]) extends Engine {
@@ -119,6 +129,8 @@ class AlgoEngine(eventEngine: EventEngine,
     } yield ()
   }
 
+  def getMarketStatus(market: String): IO[List[MarketStatus]] = gateway.getMarketStatus(market)
+
   def cancelOrder(orderId: Long): IO[Unit] = ???
 
   def sendOrder(algoName: String, symbol: String, direction: Direction,
@@ -147,12 +159,19 @@ class AlgoEngine(eventEngine: EventEngine,
 }
 
 object AlgoEngine {
-  def apply(eventEngine: EventEngine): IO[AlgoEngine] = {
+  def apply(eventEngine: EventEngine, orderEngine: OrderEngine, gateway: Gateway): IO[AlgoEngine] = {
     for {
       symbolAlgoNameListMapRef <- Ref.of[IO, Map[String, List[String]]](Map.empty)
       nameAlgoMapRef <- Ref.of[IO, Map[String, AlgoTemplate]](Map.empty)
       orderAlgoNameMapRef <- Ref.of[IO, Map[Long, String]](Map.empty)
-      engine = new AlgoEngine(eventEngine, symbolAlgoNameListMapRef, nameAlgoMapRef, orderAlgoNameMapRef)
+      engine = new AlgoEngine(
+        eventEngine,
+        orderEngine,
+        gateway,
+        symbolAlgoNameListMapRef,
+        nameAlgoMapRef,
+        orderAlgoNameMapRef
+      )
     } yield engine
   }
 }

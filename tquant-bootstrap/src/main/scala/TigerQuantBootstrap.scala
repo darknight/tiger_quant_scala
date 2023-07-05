@@ -11,14 +11,22 @@ object TigerQuantBootstrap extends IOApp.Simple {
 
   val logger = LoggerFactory[IO].getLogger
 
+  /**
+   * The topology of engine:
+   * gateway, mainEngine, algoEngine, orderEngine -> eventEngine
+   * algoEngine -> gateway, orderEngine
+   * mainEngine -> gateway, orderEngine, algoEngine
+   * @param conf
+   * @return
+   */
   def init(conf: ServerConf): IO[Unit] = {
     for {
       eventEngine <- EventEngine(conf.eventEngine.capacity)
-      algoEngine <- AlgoEngine(eventEngine)
+      gateway <- TigerGateway(conf, eventEngine)
+      orderEngine <- OrderEngine(eventEngine)
+      algoEngine <- AlgoEngine(eventEngine, orderEngine, gateway)
       // TODO: load algos and add to algo engine elegantly
       _ <- TestAlgo.createAndAttach(algoEngine)
-      orderEngine <- OrderEngine(eventEngine)
-      gateway <- TigerGateway(conf, eventEngine)
       mainEngine = new MainEngine(gateway, orderEngine, algoEngine, eventEngine)
       _ <- mainEngine.start()
     } yield ()

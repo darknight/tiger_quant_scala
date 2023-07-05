@@ -4,12 +4,13 @@ import cats.data.{EitherT, NonEmptyList}
 import cats.effect.{IO, Ref, Resource}
 import cats.implicits._
 import com.tigerbrokers.stock.openapi.client.https.client.TigerHttpClient
+import com.tigerbrokers.stock.openapi.client.struct.enums.Market
 import com.tquant.core.TigerQuantException
 import com.tquant.core.config.ServerConf
 import com.tquant.core.event.EventEngine
 import com.tquant.core.gateway.Gateway
 import com.tquant.core.log.logging
-import com.tquant.core.model.data.{Asset, Bar, Contract, Order}
+import com.tquant.core.model.data.{Asset, Bar, Contract, MarketStatus, Order}
 import com.tquant.core.model.enums.BarType
 import com.tquant.core.model.request.{ModifyRequest, OrderRequest, SubscribeRequest}
 import com.tquant.gateway.converter.Converters
@@ -20,6 +21,17 @@ import doobie.hikari.HikariTransactor
 import org.typelevel.log4cats.LoggerFactory
 
 // TODO: init `WebSocketClient` & `TigerSubscribeApi`
+
+/**
+ * `TigerGateway` is responsible to talk to tiger API, fire event to `EventEngine`
+ * @param conf
+ * @param eventEngine
+ * @param xaRes
+ * @param contractMapRef
+ * @param orderMapRef
+ * @param openOrderMapRef
+ * @param assetMapRef
+ */
 class TigerGateway(conf: ServerConf,
                    eventEngine: EventEngine,
                    xaRes: Resource[IO, HikariTransactor[IO]],
@@ -86,6 +98,18 @@ class TigerGateway(conf: ServerConf,
 
   override def getBars(symbols: NonEmptyList[String], barType: BarType,
                        limit: Int): EitherT[IO, TigerQuantException, SymbolBarMap] = ???
+
+  override def getMarketStatus(market: String): IO[List[MarketStatus]] = {
+    for {
+      resp <- quoteApi.getMarketState(Market.valueOf(market)).value
+      res <- resp match {
+        case Left(e) =>
+          logger.error(s"fetch market status failed => $e") *> IO.pure(List.empty)
+        case Right(value) =>
+          logger.info(s"fetch market status success => $value") *> IO.pure(value)
+      }
+    } yield res
+  }
 
   private def queryContract(): IO[Unit] = {
     // TODO: enable flag

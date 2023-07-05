@@ -15,6 +15,12 @@ case class OrderEngineState(assetOptRef: Ref[IO, Option[Asset]],
                             positionMapRef: Ref[IO, Map[String, Position]],
                             contractMapRef: Ref[IO, Map[String, Contract]])
 
+/**
+ * `OrderEngine` maintains a list of internal state and consume events.
+ * It has no external dependency except EventEngine
+ * @param eventEngine
+ * @param state
+ */
 class OrderEngine(eventEngine: EventEngine, state: OrderEngineState) extends Engine {
 
   val engineName: String = "OrderEngine"
