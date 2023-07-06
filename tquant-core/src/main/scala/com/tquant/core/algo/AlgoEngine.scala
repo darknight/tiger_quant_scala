@@ -1,19 +1,22 @@
 package com.tquant.core.algo
 
-import cats.data.NonEmptyList
+import cats.data.{EitherT, NonEmptyList, OptionT}
 import cats.syntax.parallel._
 import cats.effect.{IO, Ref}
 import cats.implicits._
+import com.tquant.core.TigerQuantException
 import com.tquant.core.engine.{Engine, OrderEngine}
 import com.tquant.core.event.{Event, EventEngine, EventHandler, EventType}
 import com.tquant.core.gateway.Gateway
 import com.tquant.core.log.logging
 import com.tquant.core.model.data.{Asset, Bar, Contract, MarketStatus, Order, Position, Tick, Trade}
 import com.tquant.core.model.enums.{BarType, Direction, OrderType}
+import com.tquant.core.model.request.{ModifyRequest, OrderRequest, SubscribeRequest}
 import org.typelevel.log4cats.LoggerFactory
 
 /**
  * `AlgoEngine` consumes events, call public APIs of `OrderEngine` & `Gateway`
+ *
  * @param eventEngine
  * @param symbolAlgoNameListMapRef
  * @param nameAlgoMapRef
@@ -104,6 +107,7 @@ class AlgoEngine(eventEngine: EventEngine,
 
   /**
    * register event handlers to event engine, then start all the algo implementations
+   *
    * @return
    */
   def start(): IO[Unit] = {
@@ -131,31 +135,119 @@ class AlgoEngine(eventEngine: EventEngine,
 
   def getMarketStatus(market: String): IO[List[MarketStatus]] = gateway.getMarketStatus(market)
 
-  def cancelOrder(orderId: Long): IO[Unit] = ???
+  def getBars(symbol: String, barType: BarType, limit: Int): IO[List[Bar]] = {
+    for {
+      resp <- gateway.getBars(NonEmptyList.of(symbol), barType, limit).value
+      res <- resp match {
+        case Left(err) =>
+          logger.error(s"getBars failed => $err") *> IO.pure(List.empty)
+        case Right(map) => IO(map.getOrElse(symbol, List.empty))
+      }
+    } yield res
+  }
 
+  def getSymbolBarMap(symbols: NonEmptyList[String], barType: BarType,
+                      limit: Int): IO[Map[String, List[Bar]]] = {
+    for {
+      resp <- gateway.getBars(symbols, barType, limit).value
+      res <- resp match {
+        case Left(err) =>
+          logger.error(s"getBars failed => $err") *> IO(Map.empty[String, List[Bar]])
+        case Right(map) => IO(map)
+      }
+    } yield res
+  }
+
+  /**
+   * This method returns IO(0) indicates failure to send order to tiger service
+   * @param algoName
+   * @param symbol
+   * @param direction
+   * @param price
+   * @param volume
+   * @param orderType
+   * @return
+   */
   def sendOrder(algoName: String, symbol: String, direction: Direction,
-                price: Double, volume: Int, orderType: OrderType): IO[Long] = ???
+                price: Double, volume: Int, orderType: OrderType): IO[Long] = {
+    for {
+      contractOpt <- orderEngine.getContract(symbol).value
+      id <- contractOpt match {
+        case None =>
+          logger.error(s"sendOrder failed, contract not found, identifier = $symbol")
+            .as(0L)
+        case Some(contract) =>
+          if (contract.lotSize > 0 && volume % contract.lotSize != 0) {
+            logger.error(s"sendOrder failed, volume($volume) is not multiple of lotSize(${contract.lotSize})")
+              .as(0L)
+          } else if (contract.minTick > 0 &&
+            (price - Math.floor(price / contract.minTick) * contract.minTick) >= 0.000001) {
+            logger.error(s"sendOrder failed, price($price) is not multiple of minTick(${contract.minTick})")
+              .as(0L)
+          } else {
+            val request = OrderRequest(symbol, contract.exchange, direction.entryName,
+              orderType.entryName, volume, price)
+            gateway.sendOrder(request).value
+              .flatMap {
+                case Left(err) => logger.error(s"sendOrder failed => $err").as(0L)
+                case Right(id) => IO.pure(id)
+              }
+          }
+      }
+      _ <- IO(id > 0).ifM(orderAlgoNameMapRef.update(m => m + (id -> algoName)), IO.unit)
+    } yield id
+  }
 
-  def getTick(symbol: String): IO[Tick] = ???
+  // TODO: improve impl
+  def cancelOrder(orderId: Long): IO[Unit] = {
+    for {
+      orderOpt <- orderEngine.getOrder(orderId).value
+      resp <- orderOpt match {
+        case Some(order) =>
+          gateway.cancelOrder(order.createCancelRequest).value
+        case None =>
+          logger.error(s"cancelOrder failed, order not found, id = $orderId").map { _ =>
+            val res: Either[TigerQuantException, Unit] = Right(())
+            res
+          }
+      }
+      result <- resp match {
+        case Left(err) => logger.error(s"cancelOrder error => $err")
+        case Right(_) => IO.unit
+      }
+    } yield result
+  }
 
   def subscribe(algoName: String, symbol: String): IO[Unit] = ???
 
   def cancelSubscribe(algoName: String, symbol: String): IO[Unit] = ???
 
-  def getBars(symbol: String, barType: BarType, limit: Int): IO[List[Bar]] = ???
+  //
+  // orderEngine operations
+  //
+  def getTick(symbol: String): OptionT[IO, Tick] = orderEngine.getTick(symbol)
 
-  def getSymbolBarMap(symbols: NonEmptyList[String], barType: BarType,
-                      limit: Int): IO[Map[String, List[Bar]]] = ???
+  def getOrder(orderId: Long): OptionT[IO, Order] = orderEngine.getOrder(orderId)
 
-  def getContract(symbol: String): IO[Contract] = ???
+  def getTrade(orderId: Long): OptionT[IO, Trade] = orderEngine.getTrade(orderId)
 
-  def getAsset: IO[Asset] = ???
+  def getPosition(posId: String): OptionT[IO, Position] = orderEngine.getPosition(posId)
 
-  def getPosition(positionId: String): IO[Position] = ???
+  def getContract(identifier: String): OptionT[IO, Contract] = orderEngine.getContract(identifier)
 
-  def getAllPositions: IO[List[Position]] = ???
+  def getAsset: OptionT[IO, Asset] = orderEngine.getAsset
 
-  def getAllActiveOrders: IO[List[Order]] = ???
+  def getAllTicks: IO[List[Tick]] = orderEngine.getAllTicks
+
+  def getAllOrders: IO[List[Order]] = orderEngine.getAllOrders
+
+  def getAllTrades: IO[List[Trade]] = orderEngine.getAllTrades
+
+  def getAllPositions: IO[List[Position]] = orderEngine.getAllPositions
+
+  def getAllContracts: IO[List[Contract]] = orderEngine.getAllContracts
+
+  def getAllActiveOrders(symbol: String): IO[List[Order]] = orderEngine.getAllActiveOrders(symbol)
 }
 
 object AlgoEngine {

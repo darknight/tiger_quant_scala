@@ -45,44 +45,6 @@ class MainEngine(gateway: Gateway, orderEngine: OrderEngine, algoEngine: AlgoEng
       _ <- algoEngine.stop()
     } yield ()
   }
-
-  //
-  // gateway operations
-  //
-  def subscribe(request: SubscribeRequest): IO[Unit] = gateway.subscribe(request)
-
-  def cancelSubscribe(request: SubscribeRequest): IO[Unit] = gateway.cancelSubscribe(request)
-
-  def sendOrder(request: OrderRequest): EitherT[IO, TigerQuantException, Long] = gateway.sendOrder(request)
-
-  def cancelOrder(request: ModifyRequest): EitherT[IO, TigerQuantException, Unit] = gateway.cancelOrder(request)
-
-  //
-  // orderEngine operations
-  //
-  def getTick(symbol: String): OptionT[IO, Tick] = orderEngine.getTick(symbol)
-
-  def getOrder(orderId: Long): OptionT[IO, Order] = orderEngine.getOrder(orderId)
-
-  def getTrade(orderId: Long): OptionT[IO, Trade] = orderEngine.getTrade(orderId)
-
-  def getPosition(posId: String): OptionT[IO, Position] = orderEngine.getPosition(posId)
-
-  def getContract(identifier: String): OptionT[IO, Contract] = orderEngine.getContract(identifier)
-
-  def getAsset: OptionT[IO, Asset] = orderEngine.getAsset
-
-  def getAllTicks: IO[List[Tick]] = orderEngine.getAllTicks
-
-  def getAllOrders: IO[List[Order]] = orderEngine.getAllOrders
-
-  def getAllTrades: IO[List[Trade]] = orderEngine.getAllTrades
-
-  def getAllPositions: IO[List[Position]] = orderEngine.getAllPositions
-
-  def getAllContracts: IO[List[Contract]] = orderEngine.getAllContracts
-
-  def getAllActiveOrders(symbol: String): IO[List[Order]] = orderEngine.getAllActiveOrders(symbol)
 }
 
 object MainEngine {

@@ -1,7 +1,7 @@
 package com.tquant.core.algo
 
 import cats._
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, OptionT}
 import cats.implicits._
 import cats.effect.{IO, Ref}
 import com.tquant.core.log.logging
@@ -123,7 +123,7 @@ abstract class AlgoTemplate(algoEngine: AlgoEngine,
 
   def getAllActiveOrders: IO[List[Order]] = ???
 
-  def getTick(symbol: String): IO[Tick] = algoEngine.getTick(symbol)
+  def getTick(symbol: String): OptionT[IO, Tick] = algoEngine.getTick(symbol)
 
   def getContract(symbol: String): IO[Contract] = ???
 
