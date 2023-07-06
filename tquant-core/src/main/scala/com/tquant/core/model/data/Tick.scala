@@ -32,5 +32,6 @@ case class Tick(contract: Contract, identifier: String, symbol: String, name: St
 }
 
 object Tick {
-  // TODO
+  def empty: Tick = Tick(Contract.empty, "", "", "", "", 0, 0.0, 0.0, 0.0,
+    LocalDateTime.now(), 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0.0, 0, 0.0)
 }

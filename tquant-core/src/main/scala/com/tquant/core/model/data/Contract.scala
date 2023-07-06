@@ -10,3 +10,7 @@ case class Contract(identifier: String, name: String, symbol: String, secType: S
 
   def isOption: Boolean = secType.equalsIgnoreCase(SecType.OPT.entryName)
 }
+
+object Contract {
+  def empty: Contract = Contract("", "", "", "", "", "", "", "", "", 0.0, 0.0, "", 0.0, 0)
+}

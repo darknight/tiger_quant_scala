@@ -9,4 +9,4 @@ hs_err_pid*
 
 **/target/
 **/resources/application.conf
-src/
+

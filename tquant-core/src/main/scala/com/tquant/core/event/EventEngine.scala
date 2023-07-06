@@ -61,7 +61,7 @@ class EventEngine(capacity: Int, queue: Queue[IO, Event],
     for {
       map <- handlerMapRef.get
       handlerList = map.getOrElse(event.eventType, List.empty)
-      _ = handlerList.map(_.processEvent(event))
+      _ <- handlerList.map(_.processEvent(event)).sequence_
     } yield ()
   }
 

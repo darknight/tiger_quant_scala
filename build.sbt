@@ -10,6 +10,7 @@ val mysqlConnectorVersion = "8.0.33"
 val doobieVersion = "1.0.0-RC4"
 val pureConfigVersion = "0.17.4"
 val log4catsVersion = "2.6.0"
+val ceSpecs2Version = "1.5.0"
 
 // project definition
 
@@ -24,6 +25,7 @@ lazy val core = (project in file("tquant-core"))
     libraryDependencies ++= Seq(
       "com.beachape" %% "enumeratum" % enumeratumVersion,
       "org.typelevel" %% "cats-effect" % catsEffectVersion,
+      "org.typelevel" %% "cats-effect-testing-specs2" % ceSpecs2Version % Test,
       "com.github.pureconfig" %% "pureconfig" % pureConfigVersion,
       "org.typelevel" %% "log4cats-core"    % log4catsVersion,
       "org.typelevel" %% "log4cats-slf4j"   % log4catsVersion
@@ -39,7 +41,7 @@ lazy val storage = (project in file("tquant-storage"))
       "org.tpolecat" %% "doobie-core"      % doobieVersion,
       "org.tpolecat" %% "doobie-hikari"    % doobieVersion,
       "org.tpolecat" %% "doobie-postgres"  % doobieVersion,
-      "org.tpolecat" %% "doobie-scalatest" % doobieVersion % "test"
+      "org.tpolecat" %% "doobie-specs2"    % doobieVersion % "test"
     )
   )
   .dependsOn(core)
