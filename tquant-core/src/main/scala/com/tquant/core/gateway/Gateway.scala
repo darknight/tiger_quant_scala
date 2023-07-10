@@ -49,4 +49,6 @@ abstract class Gateway(eventEngine: EventEngine) {
   def onAsset(asset: Asset): IO[Unit] = onEvent(EventType.EVENT_ASSET, asset)
 
   def getMarketStatus(market: String): IO[List[MarketStatus]]
+
+  def queryBars(symbol: String, limit: Int): IO[List[Bar]]
 }

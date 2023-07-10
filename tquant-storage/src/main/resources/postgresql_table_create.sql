@@ -1,67 +1,69 @@
 CREATE DATABASE tiger_quant;
-USE tiger_quant;
 
-CREATE TABLE `bar` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `symbol` varchar(20) NOT NULL DEFAULT '0',
-  `duration` bigint NOT NULL DEFAULT '0',
-  `period` varchar(10) DEFAULT NULL,
-  `open` double(15,4) NOT NULL DEFAULT '0.0000',
-  `high` double(15,4) NOT NULL DEFAULT '0.0000',
-  `low` double(15,4) NOT NULL DEFAULT '0.0000',
-  `close` double(15,4) NOT NULL DEFAULT '0.0000',
-  `volume` int NOT NULL DEFAULT '0',
-  `amount` double(15,4) NOT NULL DEFAULT '0.0000',
-  `time` timestamp NULL DEFAULT NULL,
-  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8
+CREATE TABLE bar
+(
+    id          SERIAL PRIMARY KEY,
+    symbol      varchar(20)    NOT NULL DEFAULT '',
+    duration    bigint         NOT NULL DEFAULT '0',
+    period      varchar(10)    NOT NULL DEFAULT '',
+    open        numeric(15, 4) NOT NULL DEFAULT '0.0000',
+    high        numeric(15, 4) NOT NULL DEFAULT '0.0000',
+    low         numeric(15, 4) NOT NULL DEFAULT '0.0000',
+    close       numeric(15, 4) NOT NULL DEFAULT '0.0000',
+    volume      int            NOT NULL DEFAULT '0',
+    amount      numeric(15, 4) NOT NULL DEFAULT '0.0000',
+    time        timestamp      NOT NULL DEFAULT now(),
+    create_time timestamp      NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
-CREATE TABLE `contract` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `identifier` varchar(40) NOT NULL,
-  `name` varchar(50) DEFAULT NULL,
-  `symbol` varchar(20) NOT NULL DEFAULT '',
-  `sec_type` varchar(20) DEFAULT NULL,
-  `currency` varchar(10) DEFAULT NULL,
-  `exchange` varchar(10) DEFAULT NULL,
-  `market` varchar(10) DEFAULT NULL,
-  `expiry` varchar(10) DEFAULT NULL,
-  `contract_month` varchar(10) DEFAULT NULL,
-  `strike` double DEFAULT NULL,
-  `multiplier` double DEFAULT NULL,
-  `right` varchar(10) DEFAULT NULL,
-  `min_tick` double DEFAULT NULL,
-  `lot_size` int DEFAULT '0',
-  `create_time` timestamp NOT NULL DEFAULT '2018-01-01 10:00:00',
-  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_idx_identifier` (`identifier`),
-  KEY `idx_symbol` (`symbol`),
-  KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8
+CREATE INDEX idx_create_time ON bar (create_time);
 
-CREATE TABLE `tick` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `seq_no` bigint DEFAULT NULL,
-  `symbol` varchar(20) NOT NULL DEFAULT '0',
-  `volume` int NOT NULL DEFAULT '0',
-  `amount` double(15,4) DEFAULT '0.0000',
-  `type` varchar(10) DEFAULT NULL,
-  `latest_price` double DEFAULT NULL,
-  `latest_volume` double DEFAULT NULL,
-  `latest_time` datetime(3) DEFAULT NULL,
-  `time` bigint DEFAULT NULL,
-  `bid_price` double DEFAULT NULL,
-  `bid_size` bigint DEFAULT NULL,
-  `ask_price` double DEFAULT NULL,
-  `ask_size` bigint DEFAULT NULL,
-  `open` double(15,4) DEFAULT '0.0000',
-  `high` double(15,4) DEFAULT '0.0000',
-  `low` double(15,4) DEFAULT '0.0000',
-  `close` double(15,4) DEFAULT '0.0000',
-  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_symbol_time` (`symbol`)
-) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8
+CREATE TABLE contract
+(
+    id             SERIAL PRIMARY KEY,
+    identifier     varchar(40)      NOT NULL,
+    name           varchar(50)      NOT NULL DEFAULT '',
+    symbol         varchar(20)      NOT NULL DEFAULT '',
+    sec_type       varchar(20)      NOT NULL DEFAULT '',
+    currency       varchar(10)      NOT NULL DEFAULT '',
+    exchange       varchar(10)      NOT NULL DEFAULT '',
+    market         varchar(10)      NOT NULL DEFAULT '',
+    expiry         varchar(10)      NOT NULL DEFAULT '',
+    contract_month varchar(10)      NOT NULL DEFAULT '',
+    strike         double precision NOT NULL DEFAULT '0.0000',
+    multiplier     double precision NOT NULL DEFAULT '0.0000',
+    "right"        varchar(10)      NOT NULL DEFAULT '',
+    min_tick       double precision NOT NULL DEFAULT '0.0000',
+    lot_size       int                       DEFAULT '0',
+    create_time    timestamp        NOT NULL DEFAULT now(),
+    update_time    timestamp        NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX uniq_idx_identifier ON contract (identifier);
+CREATE INDEX idx_symbol ON contract (symbol);
+CREATE INDEX idx_create_time ON contract (create_time);
+
+CREATE TABLE tick
+(
+    id            BIGSERIAL PRIMARY KEY,
+    seq_no        bigint           NOT NULL DEFAULT '0',
+    symbol        varchar(20)      NOT NULL DEFAULT '0',
+    volume        int              NOT NULL DEFAULT '0',
+    amount        double precision          DEFAULT '0.0000',
+    type          varchar(10)      NOT NULL DEFAULT '',
+    latest_price  double precision NOT NULL DEFAULT '0',
+    latest_volume double precision NOT NULL DEFAULT '0',
+    latest_time   timestamp(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    time          bigint           NOT NULL DEFAULT '0',
+    bid_price     double precision NOT NULL DEFAULT '0',
+    bid_size      bigint           NOT NULL DEFAULT '0',
+    ask_price     double precision NOT NULL DEFAULT '0',
+    ask_size      bigint           NOT NULL DEFAULT '0',
+    open          double precision          DEFAULT '0.0000',
+    high          double precision          DEFAULT '0.0000',
+    low           double precision          DEFAULT '0.0000',
+    close         double precision          DEFAULT '0.0000',
+    create_time   timestamp        NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_symbol_time ON tick (symbol);

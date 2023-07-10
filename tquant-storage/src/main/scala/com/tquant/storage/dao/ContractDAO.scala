@@ -9,15 +9,13 @@ import doobie.implicits._
 // TODO: unit tests
 class ContractDAO(private val xaRes: Resource[IO, HikariTransactor[IO]]) {
 
-  val ALL_COLUMN = "identifier,name,symbol,sec_type,currency,exchange,market,expiry," +
-    "contract_month,strike,multiplier,right,min_tick,lot_size,create_time"
-
   def saveContract(contract: Contract): IO[Int] = {
     val res = xaRes.use { xa =>
       for {
         insert <-
           sql"""
-            INSERT INTO contract($ALL_COLUMN) VALUES (${contract.identifier},${contract.name},
+            INSERT INTO contract(identifier,name,symbol,sec_type,currency,exchange,market,expiry,contract_month,strike,multiplier,right,min_tick,lot_size,create_time)
+            VALUES (${contract.identifier},${contract.name},
             ${contract.symbol},${contract.secType},${contract.currency},${contract.exchange},
             ${contract.market},${contract.expiry},${contract.contractMonth},${contract.strike},
             ${contract.multiplier},${contract.right},${contract.minTick},${contract.lotSize},now())
@@ -31,7 +29,7 @@ class ContractDAO(private val xaRes: Resource[IO, HikariTransactor[IO]]) {
     val res = xaRes.use { xa =>
       for {
         query <-
-          sql"""SELECT $ALL_COLUMN FROM contract WHERE identifier=$identifier"""
+          sql"""SELECT identifier,name,symbol,sec_type,currency,exchange,market,expiry,contract_month,strike,multiplier,right,min_tick,lot_size FROM contract WHERE identifier=$identifier"""
             .query[Contract]
             .option
             .transact(xa)
@@ -44,7 +42,7 @@ class ContractDAO(private val xaRes: Resource[IO, HikariTransactor[IO]]) {
     xaRes.use { xa =>
       for {
         query <-
-          sql"""SELECT $ALL_COLUMN FROM contract"""
+          sql"""SELECT identifier,name,symbol,sec_type,currency,exchange,market,expiry,contract_month,strike,multiplier,right,min_tick,lot_size FROM contract"""
             .query[Contract]
             .to[List]
             .transact(xa)

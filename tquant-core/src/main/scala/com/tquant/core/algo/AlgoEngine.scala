@@ -248,6 +248,13 @@ class AlgoEngine(eventEngine: EventEngine,
   def getAllContracts: IO[List[Contract]] = orderEngine.getAllContracts
 
   def getAllActiveOrders(symbol: String): IO[List[Order]] = orderEngine.getAllActiveOrders(symbol)
+
+  //
+  // DB operations
+  //
+  def queryBars(symbol: String, limit: Int): IO[List[Bar]] = {
+    gateway.queryBars(symbol, limit)
+  }
 }
 
 object AlgoEngine {

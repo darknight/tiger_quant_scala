@@ -16,6 +16,8 @@ class TestAlgo(algoEngine: AlgoEngine,
     for {
       _ <- logger.info(s"${algoName}.onStart is called")
       _ <- algoEngine.getMarketStatus("US")
+      res <- algoEngine.queryBars("SPY", 10)
+      _ <- logger.info(s"queryBars => $res")
     } yield ()
   }
 

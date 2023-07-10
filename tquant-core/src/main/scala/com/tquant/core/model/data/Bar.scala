@@ -6,8 +6,8 @@ import java.time.LocalDateTime
 import scala.concurrent.duration._
 
 // TODO: define `duration` as Duration, update BarDAO
-case class Bar(symbol: String, period: String, duration: Long,
-               open: Double, close: Double, high: Double, low: Double,
+case class Bar(symbol: String, duration: Long, period: String,
+               open: Double, high: Double, low: Double, close: Double,
                volume: Long, amount: Double, time: LocalDateTime)
 
 object Bar {

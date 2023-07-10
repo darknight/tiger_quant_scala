@@ -18,7 +18,8 @@ class TickDAO(private val xaRes: Resource[IO, HikariTransactor[IO]]) {
       for {
         insert <-
           sql"""
-          INSERT INTO tick($ALL_COLUMN) VALUES (${tick.symbol},${tick.volume},${tick.amount},
+          INSERT INTO tick(symbol,volume,amount,latest_price,latest_volume,latest_time,time,type,create_time)
+          VALUES (${tick.symbol},${tick.volume},${tick.amount},
           ${tick.latestPrice},${tick.latestVolume},${tick.latestTime},${tick.time},${tick.`type`},now())
            """.update.run.transact(xa)
       } yield insert
@@ -26,6 +27,7 @@ class TickDAO(private val xaRes: Resource[IO, HikariTransactor[IO]]) {
     res
   }
 
+  // FIXME
   def queryTicks(symbol: String, start: LocalDateTime, end: LocalDateTime): IO[List[Tick]] = {
     val res = xaRes.use { xa =>
       for {

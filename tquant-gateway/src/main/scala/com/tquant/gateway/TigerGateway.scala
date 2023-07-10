@@ -16,7 +16,7 @@ import com.tquant.core.model.request.{ModifyRequest, OrderRequest, SubscribeRequ
 import com.tquant.gateway.converter.Converters
 import com.tquant.gateway.tiger.{SymbolBarMap, TigerOptionApi, TigerQuoteApi, TigerTradeApi}
 import com.tquant.storage.DAOInstance
-import com.tquant.storage.dao.ContractDAO
+import com.tquant.storage.dao.{BarDAO, ContractDAO}
 import doobie.hikari.HikariTransactor
 import org.typelevel.log4cats.LoggerFactory
 
@@ -46,6 +46,7 @@ class TigerGateway(conf: ServerConf,
   private val clientConf = Converters.toClientConfig(conf)
   private val httpClient = TigerHttpClient.getInstance().clientConfig(clientConf)
   private val contractDAO = new ContractDAO(xaRes)
+  private val barDAO = new BarDAO(xaRes)
 
   val tradeApi = new TigerTradeApi[IO](httpClient)
   val quoteApi = new TigerQuoteApi[IO](httpClient)
@@ -111,7 +112,7 @@ class TigerGateway(conf: ServerConf,
     } yield res
   }
 
-  private def queryContract(): IO[Unit] = {
+  def queryContract(): IO[Unit] = {
     // TODO: enable flag
     // TODO: logging
     val contractsIO = contractDAO.queryContracts()
@@ -122,6 +123,10 @@ class TigerGateway(conf: ServerConf,
       } yield ()
     }))
     res.flatMap(_.sequence_)
+  }
+
+  def queryBars(symbol: String, limit: Int): IO[List[Bar]] = {
+    barDAO.queryBars(symbol, limit)
   }
 }
 
