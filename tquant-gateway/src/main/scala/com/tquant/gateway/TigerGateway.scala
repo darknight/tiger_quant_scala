@@ -1,9 +1,13 @@
 package com.tquant.gateway
 
 import cats.data.{EitherT, NonEmptyList}
-import cats.effect.{IO, Ref, Resource}
+import cats.effect.{IO, Ref, Resource, Sync}
 import cats.implicits._
 import com.tigerbrokers.stock.openapi.client.https.client.TigerHttpClient
+import com.tigerbrokers.stock.openapi.client.socket.data.TradeTick
+import com.tigerbrokers.stock.openapi.client.socket.data.pb.{AssetData, OrderStatusData, OrderTransactionData, PositionData, QuoteBBOData, QuoteBasicData, QuoteDepthData}
+import com.tigerbrokers.stock.openapi.client.socket.{ApiComposeCallback, WebSocketClient}
+import com.tigerbrokers.stock.openapi.client.struct.SubscribedSymbol
 import com.tigerbrokers.stock.openapi.client.struct.enums.Market
 import com.tquant.core.TigerQuantException
 import com.tquant.core.config.ServerConf
@@ -14,7 +18,7 @@ import com.tquant.core.model.data.{Asset, Bar, Contract, MarketStatus, Order}
 import com.tquant.core.model.enums.BarType
 import com.tquant.core.model.request.{ModifyRequest, OrderRequest, SubscribeRequest}
 import com.tquant.gateway.converter.Converters
-import com.tquant.gateway.tiger.{SymbolBarMap, TigerOptionApi, TigerQuoteApi, TigerTradeApi}
+import com.tquant.gateway.tiger.{SymbolBarMap, TigerOptionApi, TigerQuoteApi, TigerSubscribeApi, TigerTradeApi}
 import com.tquant.storage.DAOInstance
 import com.tquant.storage.dao.{BarDAO, ContractDAO}
 import doobie.hikari.HikariTransactor
@@ -51,6 +55,11 @@ class TigerGateway(conf: ServerConf,
   val tradeApi = new TigerTradeApi[IO](httpClient)
   val quoteApi = new TigerQuoteApi[IO](httpClient)
   val optionApi = new TigerOptionApi[IO](httpClient)
+  val subscribeApi = new TigerSubscribeApi(this)
+  val socketClient = WebSocketClient
+    .getInstance()
+    .clientConfig(clientConf)
+    .apiComposeCallback(subscribeApi)
 
   override def connect(): IO[Boolean] = {
     // FIXME
@@ -60,13 +69,19 @@ class TigerGateway(conf: ServerConf,
 
     for {
       resp <- quoteApi.grabQuotePermission().value
-      res <- resp match {
+      apiRes <- resp match {
         case Left(e) =>
           logger.error(s"grab quote perm failed => $e") *> IO.pure(false)
         case Right(value) =>
           logger.info(s"grab quote resp => $value") *> IO.pure(true)
       }
-    } yield res
+      wsRes <- Sync[IO].blocking(socketClient.connect()).attempt.flatMap {
+        case Left(err) =>
+          logger.error(s"websocket connection error => $err") *> IO.pure(false)
+        case Right(_) =>
+          logger.info(s"websocket connection succeed") *> IO.pure(true)
+      }
+    } yield apiRes && wsRes
   }
 
   override def disconnect(): IO[Unit] = ???
