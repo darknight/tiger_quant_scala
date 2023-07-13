@@ -8,7 +8,7 @@ import com.tigerbrokers.stock.openapi.client.socket.data.TradeTick
 import com.tigerbrokers.stock.openapi.client.socket.data.pb.{AssetData, OrderStatusData, OrderTransactionData, PositionData, QuoteBBOData, QuoteBasicData, QuoteDepthData}
 import com.tigerbrokers.stock.openapi.client.socket.{ApiComposeCallback, WebSocketClient}
 import com.tigerbrokers.stock.openapi.client.struct.SubscribedSymbol
-import com.tigerbrokers.stock.openapi.client.struct.enums.Market
+import com.tigerbrokers.stock.openapi.client.struct.enums.{Market, Subject}
 import com.tquant.core.TigerQuantException
 import com.tquant.core.config.ServerConf
 import com.tquant.core.event.EventEngine
@@ -23,6 +23,8 @@ import com.tquant.storage.DAOInstance
 import com.tquant.storage.dao.{BarDAO, ContractDAO}
 import doobie.hikari.HikariTransactor
 import org.typelevel.log4cats.LoggerFactory
+
+import scala.jdk.CollectionConverters._
 
 // TODO: init `WebSocketClient` & `TigerSubscribeApi`
 
@@ -84,11 +86,31 @@ class TigerGateway(conf: ServerConf,
     } yield apiRes && wsRes
   }
 
-  override def disconnect(): IO[Unit] = ???
+  override def disconnect(): IO[Unit] = {
+    // TODO: cancel all active orders
+    for {
+      _ <- Sync[IO].blocking(socketClient.disconnect())
+    } yield ()
+  }
 
-  override def subscribe(request: SubscribeRequest): IO[Unit] = ???
+  override def subscribe(request: SubscribeRequest): IO[Unit] = {
+    for {
+      _ <- Sync[IO].blocking {
+        socketClient.subscribe(Subject.OrderStatus)
+        socketClient.subscribe(Subject.Asset)
+        socketClient.subscribe(Subject.Position)
+        socketClient.subscribeQuote(request.symbols.toSortedSet.asJava)
+      }
+    } yield ()
+  }
 
-  override def cancelSubscribe(request: SubscribeRequest): IO[Unit] = ???
+  override def cancelSubscribe(request: SubscribeRequest): IO[Unit] = {
+    for {
+      _ <- Sync[IO].blocking {
+        socketClient.cancelSubscribeQuote(request.symbols.toSortedSet.asJava)
+      }
+    } yield ()
+  }
 
   override def sendOrder(request: OrderRequest): EitherT[IO, TigerQuantException, Long] = {
     val contractIO = for {

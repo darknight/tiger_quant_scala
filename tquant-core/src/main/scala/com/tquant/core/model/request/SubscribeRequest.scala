@@ -1,3 +1,5 @@
 package com.tquant.core.model.request
 
-case class SubscribeRequest(symbols: Set[String])
+import cats.data.NonEmptySet
+
+case class SubscribeRequest(symbols: NonEmptySet[String])

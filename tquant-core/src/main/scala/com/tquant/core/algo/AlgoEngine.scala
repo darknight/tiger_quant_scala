@@ -1,6 +1,6 @@
 package com.tquant.core.algo
 
-import cats.data.{EitherT, NonEmptyList, OptionT}
+import cats.data.{EitherT, NonEmptyList, NonEmptySet, OptionT}
 import cats.syntax.parallel._
 import cats.effect.{IO, Ref}
 import cats.implicits._
@@ -218,9 +218,25 @@ class AlgoEngine(eventEngine: EventEngine,
     } yield result
   }
 
-  def subscribe(algoName: String, symbol: String): IO[Unit] = ???
+  def subscribe(algoName: String, symbol: String): IO[Unit] = {
+    // TODO: check contract from orderEngine if exist
+    for {
+      map <- symbolAlgoNameListMapRef.get
+      existed = map.get(symbol).exists(_.contains(algoName))
+      _ <- if (existed) IO.unit else {
+        symbolAlgoNameListMapRef.update(m =>
+          m + (symbol -> (algoName +: m.getOrElse(symbol, List.empty))))
+      }
+      _ <- gateway.subscribe(SubscribeRequest(NonEmptySet.one(symbol)))
+    } yield ()
+  }
 
-  def cancelSubscribe(algoName: String, symbol: String): IO[Unit] = ???
+  def cancelSubscribe(algoName: String, symbol: String): IO[Unit] = {
+    // TODO: check contract from orderEngine if exist
+    for {
+      _ <- gateway.cancelSubscribe(SubscribeRequest(NonEmptySet.one(symbol)))
+    } yield ()
+  }
 
   //
   // orderEngine operations
