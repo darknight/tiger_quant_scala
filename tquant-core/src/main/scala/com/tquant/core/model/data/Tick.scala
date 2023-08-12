@@ -2,7 +2,7 @@ package com.tquant.core.model.data
 
 import com.tquant.core.event.EventData
 
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDateTime, ZoneId}
 
 case class Tick(contract: Contract, identifier: String, symbol: String, name: String, `type`: String,
                 volume: Long, amount: Double, latestPrice: Double, latestVolume: Double,
@@ -34,4 +34,31 @@ case class Tick(contract: Contract, identifier: String, symbol: String, name: St
 object Tick {
   def empty: Tick = Tick(Contract.empty, "", "", "", "", 0, 0.0, 0.0, 0.0,
     LocalDateTime.now(), 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0.0, 0, 0.0)
+
+  def apply(quote: RealtimeQuote, contract: Contract): Tick = {
+    Tick(
+      contract = contract,
+      identifier = "",
+      symbol = quote.symbol,
+      name = "",
+      `type` = "",
+      volume = quote.volume,
+      amount = 0.0,
+      latestPrice = quote.latestPrice,
+      latestVolume = 0.0,
+      latestTime = Instant.ofEpochMilli(quote.latestTime).atZone(ZoneId.systemDefault).toLocalDateTime,
+      time = 0,
+      openInterest = quote.openInterest,
+      open = quote.open,
+      close = quote.close,
+      high = quote.high,
+      low = quote.low,
+      preClose = quote.preClose,
+      bidPrice = quote.bidPrice,
+      bidSize = quote.bidSize.toInt,
+      askPrice = quote.askPrice,
+      askSize = quote.askSize.toInt,
+      midpoint = 0.0
+    )
+  }
 }

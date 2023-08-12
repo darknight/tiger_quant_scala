@@ -8,3 +8,16 @@ case class OptionChainFilter(iTheMoney: Boolean,
                              minVega: Double, maxVega: Double,
                              minTheta: Double, maxTheta: Double,
                              minRho: Double, maxRho: Double)
+
+object OptionChainFilter {
+  def empty: OptionChainFilter =
+    OptionChainFilter(false, 0D, 0D, 0, 0, 0D, 0D, 0D, 0D, 0D, 0D, 0D, 0D, 0D, 0D)
+
+  def apply(minOpenInterest: Int, maxDelta: Double): OptionChainFilter = {
+    val res = empty
+    res.copy(
+      minOpenInterest = minOpenInterest,
+      maxDelta = maxDelta
+    )
+  }
+}

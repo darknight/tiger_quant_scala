@@ -60,7 +60,7 @@ lazy val algorithm = (project in file("tquant-algorithm"))
   .settings(
     name := "tquant-algorithm"
   )
-  .dependsOn(core)
+  .dependsOn(core, gateway)
 
 lazy val bootstrap = (project in file("tquant-bootstrap"))
   .settings(

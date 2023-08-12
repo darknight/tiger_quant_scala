@@ -13,4 +13,32 @@ case class Contract(identifier: String, name: String, symbol: String, secType: S
 
 object Contract {
   def empty: Contract = Contract("", "", "", "", "", "", "", "", "", 0.0, 0.0, "", 0.0, 0)
+
+  def apply(symbol: String, secType: SecType): Contract = {
+    val contract = empty
+    contract.copy(
+      symbol = symbol,
+      secType = secType.entryName
+    )
+  }
+
+  def apply(symbol: String, secType: SecType, right: String): Contract = {
+    val contract = empty
+    contract.copy(
+      symbol = symbol,
+      secType = secType.entryName,
+      right = right
+    )
+  }
+
+  def apply(symbol: String, secType: SecType, right: String, expiry: String, strike: Double): Contract = {
+    val contract = empty
+    contract.copy(
+      symbol = symbol,
+      secType = secType.entryName,
+      right = right,
+      expiry = expiry,
+      strike = strike
+    )
+  }
 }

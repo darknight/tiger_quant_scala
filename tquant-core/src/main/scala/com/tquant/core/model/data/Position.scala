@@ -12,7 +12,14 @@ case class Position(contract: Contract, account: String, symbol: String, secType
 
   def isOption: Boolean = secType.equalsIgnoreCase(SecType.OPT.entryName)
 
-  def isOptionCall: Boolean = isOption && right.equalsIgnoreCase("CALL")
+  def isOptionForRight(rightStr: String): Boolean = isOption && right.equalsIgnoreCase(rightStr)
 
-  def isOptionPut: Boolean = isOption && right.equalsIgnoreCase("PUT")
+  def isOptionCall: Boolean = isOptionForRight("CALL")
+
+  def isOptionPut: Boolean = isOptionForRight("PUT")
+
+  def positionPnl: Double = {
+    val multiplier = if (contract.multiplier > 0.0) contract.multiplier else 1.0
+    unrealizedPnl / Math.abs(averageCost * position * multiplier)
+  }
 }

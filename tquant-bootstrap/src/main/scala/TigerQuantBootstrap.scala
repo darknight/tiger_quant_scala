@@ -6,6 +6,7 @@ import com.tquant.core.event.EventEngine
 import com.tquant.core.log.logging
 import com.tquant.gateway.TigerGateway
 import org.typelevel.log4cats.LoggerFactory
+import thetagang.ThetaGangAlgo
 
 object TigerQuantBootstrap extends IOApp.Simple {
 
