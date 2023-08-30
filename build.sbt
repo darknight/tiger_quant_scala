@@ -1,3 +1,4 @@
+
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
 ThisBuild / scalaVersion := "2.13.11"
@@ -14,10 +15,15 @@ val ceSpecs2Version = "1.5.0"
 
 // project definition
 
-//lazy val root = (project in file("."))
-//  .settings(
-//    name := "tiger_quant_scala"
-//  )
+lazy val global = (project in file("."))
+  .settings(
+    name := "tiger_quant_scala",
+    organization := "tiger",
+    mappings in Universal += {
+      ((resourceDirectory in Compile).value / "application.conf") -> "conf/application.conf"
+    }
+  )
+  .aggregate(core, storage, gateway, algorithm, bootstrap)
 
 lazy val core = (project in file("tquant-core"))
   .settings(
@@ -67,3 +73,28 @@ lazy val bootstrap = (project in file("tquant-bootstrap"))
     name := "tquant-bootstrap"
   )
   .dependsOn(core, storage, gateway, algorithm)
+
+// docker image settings
+
+bashScriptExtraDefines += """addJava "-Dconfig.file=${app_home}/../conf/application.conf""""
+
+enablePlugins(sbtdocker.DockerPlugin, JavaAppPackaging)
+docker / dockerfile := {
+  val appDir: File = stage.value
+  val targetDir = "/app"
+
+  new Dockerfile {
+    from("amazoncorretto:11-alpine")
+    entryPoint(s"$targetDir/bin/${executableScriptName.value}")
+    copy(appDir, targetDir, chown = "daemon:daemon")
+  }
+}
+
+docker / imageNames := Seq(
+  ImageName(s"${organization.value}/${name.value}:latest"),
+  ImageName(
+    namespace = Some(organization.value),
+    repository = name.value,
+    tag = Some("v" + version.value)
+  )
+)
