@@ -1,3 +1,5 @@
+package com.tquant.algo
+
 import cats.effect.{IO, Ref}
 import com.tquant.core.algo.{AlgoEngine, AlgoTemplate}
 import com.tquant.core.config.DmaSettings

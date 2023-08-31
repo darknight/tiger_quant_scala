@@ -1,4 +1,4 @@
-package thetagang
+package com.tquant.algo.thetagang
 
 case class Account(accountId: String = "", cancelOrder: Boolean = false, marginUsage: Double = 0.0)
 

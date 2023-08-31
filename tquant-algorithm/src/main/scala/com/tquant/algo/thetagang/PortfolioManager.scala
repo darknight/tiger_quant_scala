@@ -1,4 +1,4 @@
-package thetagang
+package com.tquant.algo.thetagang
 
 import cats.data.{EitherT, NonEmptyList, OptionT}
 import cats.effect.{IO, Ref}

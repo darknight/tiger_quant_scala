@@ -1,4 +1,7 @@
+package com.tquant
+
 import cats.effect.{IO, IOApp}
+import com.tquant.algo.TestAlgo
 import com.tquant.core.algo.AlgoEngine
 import com.tquant.core.config.{ConfigLoader, ServerConf}
 import com.tquant.core.engine.{MainEngine, OrderEngine}
@@ -6,7 +9,6 @@ import com.tquant.core.event.EventEngine
 import com.tquant.core.log.logging
 import com.tquant.gateway.TigerGateway
 import org.typelevel.log4cats.LoggerFactory
-import thetagang.ThetaGangAlgo
 
 object TigerQuantBootstrap extends IOApp.Simple {
 

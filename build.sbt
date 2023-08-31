@@ -14,16 +14,15 @@ val log4catsVersion = "2.6.0"
 val ceSpecs2Version = "1.5.0"
 
 // project definition
-
-lazy val global = (project in file("."))
+lazy val root = (project in file("."))
   .settings(
     name := "tiger_quant_scala",
     organization := "tiger",
     mappings in Universal += {
       ((resourceDirectory in Compile).value / "application.conf") -> "conf/application.conf"
-    }
+    },
   )
-  .aggregate(core, storage, gateway, algorithm, bootstrap)
+  .dependsOn(core, storage, gateway, algorithm)
 
 lazy val core = (project in file("tquant-core"))
   .settings(
@@ -68,12 +67,6 @@ lazy val algorithm = (project in file("tquant-algorithm"))
   )
   .dependsOn(core, gateway)
 
-lazy val bootstrap = (project in file("tquant-bootstrap"))
-  .settings(
-    name := "tquant-bootstrap"
-  )
-  .dependsOn(core, storage, gateway, algorithm)
-
 // docker image settings
 
 bashScriptExtraDefines += """addJava "-Dconfig.file=${app_home}/../conf/application.conf""""
@@ -84,7 +77,8 @@ docker / dockerfile := {
   val targetDir = "/app"
 
   new Dockerfile {
-    from("amazoncorretto:11-alpine")
+//    from("amazoncorretto:11-alpine")
+    from("adoptopenjdk/openjdk11:jre-11.0.18_10")
     entryPoint(s"$targetDir/bin/${executableScriptName.value}")
     copy(appDir, targetDir, chown = "daemon:daemon")
   }

@@ -1,4 +1,4 @@
-package thetagang
+package com.tquant.algo.thetagang
 
 import cats.effect.{IO, Ref}
 import com.tquant.core.algo.{AlgoEngine, AlgoTemplate}

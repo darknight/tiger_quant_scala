@@ -1,8 +1,8 @@
+package com.tquant.algo
+
 import cats.effect.{IO, Ref}
 import com.tquant.core.algo.{AlgoEngine, AlgoTemplate}
-import com.tquant.core.log.logging
 import com.tquant.core.model.data.{Bar, Order, Tick, Trade}
-import org.typelevel.log4cats.LoggerFactory
 
 class TestAlgo(algoEngine: AlgoEngine,
                activeRef: Ref[IO, Boolean],
